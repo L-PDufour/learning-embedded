@@ -1,0 +1,8 @@
+/.direnv/bin
+/.direnv
+*.o
+/5_makefile_project_v2.elf
+/5_makefile_project_v2.map
+/.cache/clangd/index
+/chip_headers
+/cmsis-device-f4

@@ -1,0 +1,7 @@
+# .clangd
+CompileFlags:
+  Add:
+    - --target=arm-none-eabi
+    - -mcpu=cortex-m4          # adjust to your specific core
+    - -mfpu=fpv4-sp-d16        # omit if your core has no FPU
+    - -mfloat-abi=hard
