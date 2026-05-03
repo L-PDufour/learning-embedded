@@ -2,11 +2,21 @@
 #define ENGINE_H
 
 #include <stdint.h>
+
+typedef enum {
+  WAVE_SQUARE,
+  WAVE_SAW,
+  WAVE_TRIANGLE,
+  WAVE_SINE,
+} WaveType;
+
 typedef struct engine {
   int num_steps;
   int steps[4];
   int bpm;
   int sample_idx;
+  WaveType wave;
+
 } Engine;
 
 #define SAMPLE_RATE 22050
