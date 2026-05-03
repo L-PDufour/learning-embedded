@@ -19,8 +19,7 @@
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
             # Cross-compiler toolchain (ARM bare-metal)
-            gcc-arm-embedded # arm-none-eabi-gcc, ld, objcopy, size…
-
+            gcc
             # Flashing & on-chip debugging
             openocd
             stlink # st-flash, st-info
@@ -37,6 +36,7 @@
 
             # Serial monitor
             picocom
+            alsa-utils
 
             # Binary inspection
             binutils-unwrapped
@@ -63,10 +63,6 @@
             echo "  arm-none-eabi-objdump -d build/firmware.elf | less"
           '';
 
-          env = {
-            CPATH = "${pkgs.gcc-arm-embedded}/arm-none-eabi/include";
-            CMAKE_EXPORT_COMPILE_COMMANDS = "1";
-          };
         };
       }
     );

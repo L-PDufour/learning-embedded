@@ -33,7 +33,7 @@ $(TARGET).elf: $(OBJS)
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
 flash:
-	openocd -f board/st_nucleo_f4.cfg -c "program $(TARGET).elf verify reset exit"
+	openocd -f board/st_nucleo_f4.cfg -c "init; reset halt; program 5_makefile_project_v2.elf verify reset exit"
 
 clean:
 	rm -f *.o src/*.o *.elf *.map

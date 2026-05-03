@@ -1,27 +1,5 @@
 [
   {
-    "file": "src/adc.c",
-    "arguments": [
-      "arm-none-eabi-gcc",
-      "-c",
-      "-mcpu=cortex-m4",
-      "-mthumb",
-      "-std=gnu11",
-      "-DSTM32F446xx",
-      "-fno-builtin",
-      "-IInc",
-      "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
-      "-Ichip_headers/CMSIS/Include",
-      "src/adc.c",
-      "-o",
-      "src/adc.o",
-      "-I",
-      "/nix/store/3y7lyg1ykgxhlb9sa5iy0gb8hnshb302-gcc-arm-embedded-15.2.rel1/arm-none-eabi/include"
-    ],
-    "directory": "/home/desktop/Documents/embedded",
-    "output": "src/adc.o"
-  },
-  {
     "file": "src/gpio.c",
     "arguments": [
       "arm-none-eabi-gcc",
@@ -44,94 +22,6 @@
     "output": "src/gpio.o"
   },
   {
-    "file": "src/syscalls.c",
-    "arguments": [
-      "arm-none-eabi-gcc",
-      "-c",
-      "-mcpu=cortex-m4",
-      "-mthumb",
-      "-std=gnu11",
-      "-DSTM32F446xx",
-      "-fno-builtin",
-      "-IInc",
-      "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
-      "-Ichip_headers/CMSIS/Include",
-      "src/syscalls.c",
-      "-o",
-      "src/syscalls.o",
-      "-I",
-      "/nix/store/3y7lyg1ykgxhlb9sa5iy0gb8hnshb302-gcc-arm-embedded-15.2.rel1/arm-none-eabi/include"
-    ],
-    "directory": "/home/desktop/Documents/embedded",
-    "output": "src/syscalls.o"
-  },
-  {
-    "file": "src/systick.c",
-    "arguments": [
-      "arm-none-eabi-gcc",
-      "-c",
-      "-mcpu=cortex-m4",
-      "-mthumb",
-      "-std=gnu11",
-      "-DSTM32F446xx",
-      "-fno-builtin",
-      "-IInc",
-      "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
-      "-Ichip_headers/CMSIS/Include",
-      "src/systick.c",
-      "-o",
-      "src/systick.o",
-      "-I",
-      "/nix/store/3y7lyg1ykgxhlb9sa5iy0gb8hnshb302-gcc-arm-embedded-15.2.rel1/arm-none-eabi/include"
-    ],
-    "directory": "/home/desktop/Documents/embedded",
-    "output": "src/systick.o"
-  },
-  {
-    "file": "src/tim.c",
-    "arguments": [
-      "arm-none-eabi-gcc",
-      "-c",
-      "-mcpu=cortex-m4",
-      "-mthumb",
-      "-std=gnu11",
-      "-DSTM32F446xx",
-      "-fno-builtin",
-      "-IInc",
-      "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
-      "-Ichip_headers/CMSIS/Include",
-      "src/tim.c",
-      "-o",
-      "src/tim.o",
-      "-I",
-      "/nix/store/3y7lyg1ykgxhlb9sa5iy0gb8hnshb302-gcc-arm-embedded-15.2.rel1/arm-none-eabi/include"
-    ],
-    "directory": "/home/desktop/Documents/embedded",
-    "output": "src/tim.o"
-  },
-  {
-    "file": "src/uart.c",
-    "arguments": [
-      "arm-none-eabi-gcc",
-      "-c",
-      "-mcpu=cortex-m4",
-      "-mthumb",
-      "-std=gnu11",
-      "-DSTM32F446xx",
-      "-fno-builtin",
-      "-IInc",
-      "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
-      "-Ichip_headers/CMSIS/Include",
-      "src/uart.c",
-      "-o",
-      "src/uart.o",
-      "-I",
-      "/nix/store/3y7lyg1ykgxhlb9sa5iy0gb8hnshb302-gcc-arm-embedded-15.2.rel1/arm-none-eabi/include"
-    ],
-    "directory": "/home/desktop/Documents/embedded",
-    "output": "src/uart.o"
-  },
-  {
     "file": "main.c",
     "arguments": [
       "arm-none-eabi-gcc",
@@ -152,27 +42,5 @@
     ],
     "directory": "/home/desktop/Documents/embedded",
     "output": "main.o"
-  },
-  {
-    "file": "stm32f411_startup.c",
-    "arguments": [
-      "arm-none-eabi-gcc",
-      "-c",
-      "-mcpu=cortex-m4",
-      "-mthumb",
-      "-std=gnu11",
-      "-DSTM32F446xx",
-      "-fno-builtin",
-      "-IInc",
-      "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
-      "-Ichip_headers/CMSIS/Include",
-      "stm32f411_startup.c",
-      "-o",
-      "stm32f411_startup.o",
-      "-I",
-      "/nix/store/3y7lyg1ykgxhlb9sa5iy0gb8hnshb302-gcc-arm-embedded-15.2.rel1/arm-none-eabi/include"
-    ],
-    "directory": "/home/desktop/Documents/embedded",
-    "output": "stm32f411_startup.o"
   }
 ]

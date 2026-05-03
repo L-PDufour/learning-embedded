@@ -1,0 +1,192 @@
+#+TITLE: STM32 Synth Project
+#+AUTHOR: Leon Pierre Dufour
+#+DATE: 2026-04-28
+#+OPTIONS: toc:t
+
+* Overview
+
+A bare-metal software synthesizer running on the STM32F446RE, built with a
+clean layered architecture targeting multiple platforms from the same C99 engine.
+Designed to be fun for a kid.
+
+* Goals
+
+- Small, finishable embedded project
+- Clean architecture separating engine from hardware
+- Multi-platform from same codebase
+- Fun for kids to use
+
+* Architecture
+
+** The Core Principle
+
+#+BEGIN_EXAMPLE
+Hardware Input → Hardware Layer → Software Engine → Hardware Layer → Sound Output
+#+END_EXAMPLE
+
+The software engine is sandwiched between two hardware layers. It speaks only in
+musical concepts, never in pins, registers or voltages.
+
+** Layers
+
+*** Engine (pure C99, zero platform deps)
+- Oscillator
+- Envelope
+- Filter
+- Step Sequencer
+- Knows nothing about STM32, SDL, or any platform
+
+*** Hardware Abstraction (HAL)
+- Abstract interface between engine and platform
+- Just function signatures both sides agree on
+- Engine calls it, platform implements it
+
+*** Platform Layer (one per target)
+- =stm32/= — DAC register write, timer ISR, GPIO reads
+- =desktop/= — miniaudio callback, stdin
+
+* Targets
+
+| Target  | Audio Out          | Input        | Status  |
+|---------+--------------------+--------------+---------|
+| Desktop | stdout pipe aplay  | stdin / CLI  | First   |
+| STM32   | DAC + timer ISR    | GPIO buttons | Second  |
+| WASM    | Browser audio      | Browser      | Later   |
+
+* Toolchain
+
+| Tool       | Choice              | Reason                        |
+|------------+---------------------+-------------------------------|
+| Language   | C99                 | Portable, embedded friendly   |
+| Build      | plain Make          | Suckless, already have it     |
+| Compiler   | GCC                 | Already in Nix flake          |
+| Debugger   | GDB + OpenOCD       | Terminal native               |
+| Flash      | st-flash            | One command, does one thing   |
+| Audio lib  | miniaudio (header)  | Single header, no deps        |
+| Audio out  | stdout pipe aplay   | Most suckless option          |
+
+* Hardware
+
+** STM32F446RE Peripherals Used
+- DAC channel 1 on PA4 (12-bit, 4096 levels)
+- Timer for sample rate interrupt (44100Hz or 22050Hz)
+- GPIO for button inputs
+- ADC for potentiometer input
+
+** No extra chips needed
+The onboard DAC is sufficient. Only external hardware needed:
+- 3.5mm jack or powered speaker
+- Coupling capacitor to block DC offset
+- Breadboard components below
+
+** Breadboard Layout
+Kept minimal for reliability and kid-proofing.
+
+| Component       | Quantity | Purpose                  |
+|-----------------+----------+--------------------------|
+| Push buttons    | 4        | Step toggle              |
+| LEDs            | 4        | Step indicator           |
+| Push buttons    | 2        | Step select, tempo       |
+| Potentiometer   | 1        | Note selection per step  |
+
+* The Sequencer
+
+** Scope
+- 4 steps (breadboard friendly, musically sufficient)
+- Pentatonic scale (no wrong notes, kid friendly)
+- Each step has an on/off state and an assigned note
+- Loops continuously
+
+** Why Pentatonic
+Almost any combination of notes sounds musical. A 7 year old cannot make it
+sound bad. Perfect for a child bashing buttons enthusiastically.
+
+** Controls
+- 4 buttons toggle each step on/off
+- 1 button selects active step to edit
+- 1 potentiometer changes the note of the selected step
+- 1 button changes tempo
+
+* Engine API (conceptual)
+
+The API is the heart of the project. Above it is music, below it is hardware.
+Nothing crosses that line.
+
+** Input side (musical events in)
+#+BEGIN_EXAMPLE
+set_step_note(step, note)
+toggle_step(step)
+set_tempo(bpm)
+note_on(note)
+note_off(note)
+#+END_EXAMPLE
+
+** Output side (samples out)
+#+BEGIN_EXAMPLE
+get_next_sample()   -> called by timer ISR or audio callback
+fill_buffer(buf, n) -> called by DMA or miniaudio
+#+END_EXAMPLE
+
+** Platform mapping
+#+BEGIN_EXAMPLE
+STM32:   timer ISR     → calls engine → writes DAC register
+Desktop: aplay pipe    → calls engine → writes stdout
+WASM:    audio callback → calls engine → fills browser buffer
+#+END_EXAMPLE
+
+* Development Strategy
+
+** Progression
+1. Hardcode a sequence, get sound out of desktop (validate engine math)
+2. Add CLI input: enter sequence then play
+3. Port engine to STM32, thin DAC output layer
+4. Add buttons and potentiometer on breadboard
+5. Polish, document, demo
+
+** CLI flow
+#+BEGIN_EXAMPLE
+$ ./synth
+enter sequence (4 notes 1-5): 1 3 2 4
+playing... (ctrl+c to stop)
+#+END_EXAMPLE
+
+* Folder Structure
+
+#+BEGIN_EXAMPLE
+synth/
+├── engine/          # pure C99, zero platform deps
+│   ├── oscillator.c
+│   ├── envelope.c
+│   ├── filter.c
+│   └── sequencer.c
+│
+├── platform/        # one folder per target
+│   ├── stm32/       # DAC, timers, GPIO
+│   └── desktop/     # miniaudio.h, stdin, aplay pipe
+│
+├── hal/             # abstract interface headers
+│
+├── Inc/             # shared headers
+│
+└── tools/           # scripts, wav dumpers, debug helpers
+#+END_EXAMPLE
+
+* Engine Components
+
+** Oscillator
+Pure math function producing a sample value. Waveforms: sine, saw, square.
+No platform knowledge whatsoever.
+
+** Envelope (ADSR)
+State machine in software. Scales oscillator output over time.
+States: attack, decay, sustain, release.
+
+** Filter
+DSP equation applied per sample before DAC output.
+Start with a simple one-pole low pass filter.
+
+** Step Sequencer
+Array of 4 steps, each with a note and on/off state.
+Timer counts steps, fires note_on/note_off into engine.
+Completely divorced from audio output.
+
