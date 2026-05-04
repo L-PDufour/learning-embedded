@@ -5,7 +5,7 @@
 int main(void) {
 
   Engine e = engine_init();
-  engine_set_bpm(&e, 200);
+  engine_set_bpm(&e, 400);
   while (1) {
 
     int16_t sample = engine_next_sample(&e);
