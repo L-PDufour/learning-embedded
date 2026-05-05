@@ -29,6 +29,9 @@ src/%.o: src/%.c
 %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@
 
+synth: main.c engine/engine.c
+	gcc main.c engine/engine.c -o synth -I Inc -lm
+
 $(TARGET).elf: $(OBJS)
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 

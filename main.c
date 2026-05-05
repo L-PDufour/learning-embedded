@@ -1,11 +1,18 @@
 #include "engine.h"
 #include <stdint.h>
 #include <stdio.h>
-
 int main(void) {
 
   Engine e = engine_init();
   engine_set_bpm(&e, 400);
+  engine_set_steps(&e, 32,
+                   (MusicNote[]){NOTE_E5, NOTE_B4, NOTE_C5, NOTE_D5, NOTE_C5,
+                                 NOTE_B4, NOTE_A4, NOTE_A4, NOTE_C5, NOTE_E5,
+                                 NOTE_D5, NOTE_C5, NOTE_B4, NOTE_C5, NOTE_D5,
+                                 NOTE_E5, NOTE_C5, NOTE_A4, NOTE_A4, NOTE_REST,
+                                 NOTE_D5, NOTE_F5, NOTE_A5, NOTE_G5, NOTE_F5,
+                                 NOTE_E5, NOTE_C5, NOTE_E5, NOTE_D5, NOTE_C5,
+                                 NOTE_B4, NOTE_B4});
   while (1) {
 
     int16_t sample = engine_next_sample(&e);
