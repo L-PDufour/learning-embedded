@@ -3,6 +3,14 @@
 
 #include <stdint.h>
 
+#ifdef PLATFORM_STM32
+typedef uint16_t sample_t;
+#define SAMPLE_MAX 4095
+#else
+typedef int16_t sample_t;
+#define SAMPLE_MAX 32767
+#endif
+
 typedef enum {
   NOTE_REST = 0,
   NOTE_C0,
@@ -152,7 +160,7 @@ typedef struct engine {
 } Engine;
 
 #define SAMPLE_RATE 22050
-#define AMPLITUDE 8000
+#define AMPLITUDE (SAMPLE_MAX / 2)
 Engine engine_init(void);
 int16_t engine_next_sample(Engine *e);
 void engine_set_bpm(Engine *e, int bpm);

@@ -3,6 +3,10 @@
 #+DATE: 2026-04-28
 #+OPTIONS: toc:t
 
+* TODO
+** TODO DAC ditigal to audio
+** TODO Ajouter miniaudio
+** 
 * Overview
 
 A bare-metal software synthesizer running on the STM32F446RE, built with a

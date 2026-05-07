@@ -29,8 +29,11 @@ src/%.o: src/%.c
 %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@
 
-synth: main.c engine/engine.c
-	gcc main.c engine/engine.c -o synth -I Inc -lm
+synth: main.c engine/engine.c src/platform_cli.c
+	gcc main.c engine/engine.c src/platform_cli.c -o synth -I Inc -lm
+
+cli: main.c engine/engine.c src/platform_cli.c
+	gcc main.c engine/engine.c src/platform_cli.c -o synth -I Inc -lm
 
 $(TARGET).elf: $(OBJS)
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
@@ -39,4 +42,4 @@ flash:
 	openocd -f board/st_nucleo_f4.cfg -c "init; reset halt; program 5_makefile_project_v2.elf verify reset exit"
 
 clean:
-	rm -f *.o src/*.o *.elf *.map
+	rm -f *.o src/*.o *.elf *.map synth cli

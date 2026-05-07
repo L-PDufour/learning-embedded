@@ -24,7 +24,7 @@ Engine engine_init() {
   engine.bpm = 120;
   engine.num_steps = 0;
   engine.sample_idx = 0;
-  engine.wave = WAVE_SAW;
+  engine.wave = WAVE_SINE;
   engine.filter = filter_init();
   filter_set_cutoff(&engine.filter, 4000);
   return engine;
@@ -88,7 +88,7 @@ static int16_t oscillator(WaveType wave, int current_cycle, int period) {
   return sample;
 }
 
-int16_t engine_next_sample(Engine *e) {
+sample_t engine_next_sample(Engine *e) {
 
   // fprintf(stderr, "%f\n", e->filter.filter_p);
   int samples_per_step = (SAMPLE_RATE * 60) / e->bpm;
