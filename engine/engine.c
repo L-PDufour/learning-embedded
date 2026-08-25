@@ -57,7 +57,7 @@ void engine_set_steps(Engine *e, int maxSteps, MusicNote *n) {
 
 void engine_set_bpm(Engine *e, int bpm) { e->bpm = bpm; }
 
-static int16_t oscillator(WaveType wave, int current_cycle, int period) {
+static int16_t oscillator(WaveType wave, uint32_t phase) {
   int16_t sample;
   switch (wave) {
   case WAVE_SQUARE:
@@ -67,7 +67,7 @@ static int16_t oscillator(WaveType wave, int current_cycle, int period) {
       sample = -AMPLITUDE;
     }
     break;
-  case WAVE_SAW:
+  case WAVE_SINE:
     sample = (sinf(2 * M_PI * current_cycle / period) * AMPLITUDE);
     break;
   case WAVE_TRIANGLE:
@@ -78,7 +78,7 @@ static int16_t oscillator(WaveType wave, int current_cycle, int period) {
                ((current_cycle - period / 2) * 2 * 2 * AMPLITUDE / period);
     }
     break;
-  case WAVE_SINE:
+  case WAVE_SAW:
     sample = (current_cycle * 2 * AMPLITUDE / period) - AMPLITUDE;
     break;
   default:
@@ -90,17 +90,15 @@ static int16_t oscillator(WaveType wave, int current_cycle, int period) {
 
 sample_t engine_next_sample(Engine *e) {
 
-  // fprintf(stderr, "%f\n", e->filter.filter_p);
   int samples_per_step = (SAMPLE_RATE * 60) / e->bpm;
-  int current_step = (e->sample_idx / samples_per_step) % e->num_steps;
-  if (e->steps[current_step] == 0) {
-    e->sample_idx++;
-    return 0;
+
+  e->step_sample_count++;
+  if (e->step_sample_count > samples_per_step) {
+    e->step_sample_count = 0;
+    e->current_step++;
   }
-  int period = SAMPLE_RATE / e->steps[current_step];
-  int current_cycle = e->sample_idx % period;
-  e->sample_idx++;
-  int16_t sample = oscillator(e->wave, current_cycle, period);
+
+  int16_t sample = oscillator(e->wave, );
   sample = filter_process(&e->filter, sample);
   return sample;
 }

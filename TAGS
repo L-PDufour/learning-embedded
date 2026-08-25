@@ -1,0 +1,518 @@
+
+Inc/adc.h,21
+#define ADC_H__2,16
+
+Inc/adc_dma.h,56
+#define ADC_DMA_H__2,20
+#define NUM_OF_CHANNELS 6,108
+
+Inc/dma.h,128
+#define DMA_H__2,16
+#define LISR_TCIF0 5,75
+#define LIFCR_CTCIF0 6,104
+#define LISR_TEIF0 7,135
+#define LIFCR_CTEIF0 8,164
+
+Inc/engine.h,2762
+#define ENGINE_H2,17
+typedef uint16_t sample_t;7,78
+#define SAMPLE_MAX 8,105
+typedef int16_t sample_t;10,135
+#define SAMPLE_MAX 11,161
+  NOTE_REST 15,209
+  NOTE_C0,16,226
+  NOTE_CS0,17,237
+  NOTE_D0,18,249
+  NOTE_DS0,19,260
+  NOTE_E0,20,272
+  NOTE_F0,21,283
+  NOTE_FS0,22,294
+  NOTE_G0,23,306
+  NOTE_GS0,24,317
+  NOTE_A0,25,329
+  NOTE_AS0,26,340
+  NOTE_B0,27,352
+  NOTE_C1,28,363
+  NOTE_CS1,29,374
+  NOTE_D1,30,386
+  NOTE_DS1,31,397
+  NOTE_E1,32,409
+  NOTE_F1,33,420
+  NOTE_FS1,34,431
+  NOTE_G1,35,443
+  NOTE_GS1,36,454
+  NOTE_A1,37,466
+  NOTE_AS1,38,477
+  NOTE_B1,39,489
+  NOTE_C2,40,500
+  NOTE_CS2,41,511
+  NOTE_D2,42,523
+  NOTE_DS2,43,534
+  NOTE_E2,44,546
+  NOTE_F2,45,557
+  NOTE_FS2,46,568
+  NOTE_G2,47,580
+  NOTE_GS2,48,591
+  NOTE_A2,49,603
+  NOTE_AS2,50,614
+  NOTE_B2,51,626
+  NOTE_C3,52,637
+  NOTE_CS3,53,648
+  NOTE_D3,54,660
+  NOTE_DS3,55,671
+  NOTE_E3,56,683
+  NOTE_F3,57,694
+  NOTE_FS3,58,705
+  NOTE_G3,59,717
+  NOTE_GS3,60,728
+  NOTE_A3,61,740
+  NOTE_AS3,62,751
+  NOTE_B3,63,763
+  NOTE_C4,64,774
+  NOTE_CS4,65,785
+  NOTE_D4,66,797
+  NOTE_DS4,67,808
+  NOTE_E4,68,820
+  NOTE_F4,69,831
+  NOTE_FS4,70,842
+  NOTE_G4,71,854
+  NOTE_GS4,72,865
+  NOTE_A4,73,877
+  NOTE_AS4,74,888
+  NOTE_B4,75,900
+  NOTE_C5,76,911
+  NOTE_CS5,77,922
+  NOTE_D5,78,934
+  NOTE_DS5,79,945
+  NOTE_E5,80,957
+  NOTE_F5,81,968
+  NOTE_FS5,82,979
+  NOTE_G5,83,991
+  NOTE_GS5,84,1002
+  NOTE_A5,85,1014
+  NOTE_AS5,86,1025
+  NOTE_B5,87,1037
+  NOTE_C6,88,1048
+  NOTE_CS6,89,1059
+  NOTE_D6,90,1071
+  NOTE_DS6,91,1082
+  NOTE_E6,92,1094
+  NOTE_F6,93,1105
+  NOTE_FS6,94,1116
+  NOTE_G6,95,1128
+  NOTE_GS6,96,1139
+  NOTE_A6,97,1151
+  NOTE_AS6,98,1162
+  NOTE_B6,99,1174
+  NOTE_C7,100,1185
+  NOTE_CS7,101,1196
+  NOTE_D7,102,1208
+  NOTE_DS7,103,1219
+  NOTE_E7,104,1231
+  NOTE_F7,105,1242
+  NOTE_FS7,106,1253
+  NOTE_G7,107,1265
+  NOTE_GS7,108,1276
+  NOTE_A7,109,1288
+  NOTE_AS7,110,1299
+  NOTE_B7,111,1311
+  NOTE_COUNT112,1322
+} MusicNote;113,1335
+static const int NOTE_FREQUENCIES[NOTE_FREQUENCIES115,1349
+  WAVE_SQUARE,135,2119
+  WAVE_SAW,136,2134
+  WAVE_TRIANGLE,137,2146
+  WAVE_SINE,138,2163
+} WaveType;139,2176
+  FILTER_LOW_PASS,142,2204
+} FilterType;143,2223
+typedef struct filter 145,2238
+  float filter_state;146,2262
+  float cutoff;147,2284
+  float filter_p;148,2300
+  FilterType filter;149,2318
+} Filter;150,2339
+typedef struct engine 152,2350
+  int num_steps;153,2374
+  int steps[steps154,2391
+  int bpm;155,2408
+  int current_step;156,2419
+  int step_sample_count;157,2439
+  uint32_t phase_acc;158,2464
+  uint32_t phase_inc;159,2486
+  Filter filter;161,2509
+  WaveType wave;163,2527
+} Engine;165,2545
+#define SAMPLE_RATE 167,2556
+#define AMPLITUDE 168,2582
+
+Inc/gpio.h,21
+#define GPIO_H_2,16
+
+Inc/gpio_exti.h,27
+#define GPIO_EXTI_H__2,22
+
+Inc/i2c.h,20
+#define I2C_H_2,15
+
+Inc/iwdg.h,22
+#define IWDG_H__2,17
+
+Inc/platform.h,24
+#define PLATFORM_H2,19
+
+Inc/rtc.h,21
+#define RTC_H__2,16
+
+Inc/spi.h,20
+#define SPI_H_2,15
+
+Inc/ssd1306.h,108
+#define SSD1306_H2,18
+#define SSD1306_ADDR 6,58
+#define SSD1306_WIDTH 7,84
+#define SSD1306_HEIGHT 8,110
+
+Inc/ssd1306_font.h,263
+#define SSD1306_FONT_H39,1607
+static const uint8_t gsc_ssd1306_ascii_1206[gsc_ssd1306_ascii_120652,1771
+static const uint8_t gsc_ssd1306_ascii_1608[gsc_ssd1306_ascii_1608248,10887
+static const uint8_t gsc_ssd1306_ascii_2412[gsc_ssd1306_ascii_2412444,22283
+
+Inc/ssd1306_fonts.h,270
+#define DRIVER_SSD1306_FONT_H39,1614
+static const uint8_t gsc_ssd1306_ascii_1206[gsc_ssd1306_ascii_120652,1785
+static const uint8_t gsc_ssd1306_ascii_1608[gsc_ssd1306_ascii_1608248,10901
+static const uint8_t gsc_ssd1306_ascii_2412[gsc_ssd1306_ascii_2412444,22297
+
+Inc/systick.h,24
+#define SYSTICK_H_2,19
+
+Inc/tim.h,20
+#define TIM_H_3,38
+
+Inc/uart.h,24
+#define __UART_H__2,19
+
+Inc/uart_dma.h,60
+#define UART_DMA_H__2,21
+#define UART_DATA_BUFF_SIZE 5,85
+
+main.c,15
+int main(4,64
+
+src/adc.c,273
+#define GPIOAEN 2,17
+#define ADC1EN 3,43
+#define ADC_CH1 4,68
+#define ADC_SEQ_LEN_1 5,94
+#define CR2_ADCON 6,121
+#define CR2_CONT 7,149
+#define CR2_SWSTART 8,176
+#define SR_EOC 9,207
+void pa1_adc_init(10,232
+void start_conversion(27,733
+uint32_t adc_read(33,880
+
+src/adc_dma.c,482
+#define GPIOAEN 2,21
+#define ADC1EN 3,47
+#define CR1_SCAN 4,72
+#define CR2_DMA 5,99
+#define CR2_DDS 6,125
+#define CR2_CONT 7,151
+#define CR2_ADCON 8,178
+#define CR2_SWSTART 9,206
+#define DMA2EN 10,237
+#define DMA_SCR_EN 11,263
+#define DMA_SCR_MINC 12,292
+#define DMA_SCR_PINC 13,324
+#define DMA_SCR_CIRC 14,355
+#define DMA_SCR_TCIE 15,386
+#define DMA_SCR_TEIE 16,417
+#define DMA_SFCR_DMDIS 17,448
+uint16_t adc_raw_data[adc_raw_data18,481
+void adc_dma_init(19,521
+
+src/dma.c,252
+#define DMA2EN 2,17
+#define DMA_SCR_EN 3,43
+#define DMA_SCR_MINC 4,72
+#define DMA_SCR_PINC 5,104
+#define DMA_SCR_TCIE 6,135
+#define DMA_SCR_TEIE 7,166
+#define DMA_SFCR_DMDIS 8,197
+void dma2_mem2mem_config(9,230
+void dma_transfer_start(44,1373
+
+src/gpio.c,45
+#define GPIOAEN 3,38
+void button_init(5,65
+
+src/gpio_exti.c,73
+#define GPIOAEN 2,23
+#define SYSCFGEN 3,49
+void button_exti_init(5,78
+
+src/i2c.c,459
+#define GPIOBEN 2,23
+#define I2C1EN 3,49
+#define I2C_100KHZ 4,75
+#define SD_MODE_MAX_RISE_TIME 5,97
+#define CR1_PE 6,130
+#define SR2_BUSY 7,155
+#define CR1_START 8,182
+#define SR1_SB 9,210
+#define SR1_ADDR 10,235
+#define SR1_TXE 11,262
+#define CR1_ACK 12,288
+#define CR1_STOP 13,315
+#define SR1_RXNE 14,342
+#define SR1_BTF 15,369
+void i2c1_init(20,437
+void i2c1_byte_read(61,1693
+void i2c1_burst_read(106,2836
+void i2c1_burst_write(169,4371
+
+src/iwdg.c,222
+#define IWDG_KEY_ENABLE 2,18
+#define IWDG_KEY_WR_ACCESS_ENABLE 3,54
+#define IWDG_PRESCALER_4 4,100
+#define IWDG_RELOAD_VAL 5,137
+#define IWDG_KEY_RELOAD 6,167
+void iwdg_init(8,254
+static uint8_t isIwdg_ready(24,856
+
+src/platform_cli.c,81
+static Engine e;5,62
+void platform_init(6,79
+void platform_audio_write(23,802
+
+src/rtc.c,1242
+#define PWREN 2,17
+#define CR_DBP 3,42
+#define CSR_LSION 4,67
+#define CSR_LSIRDY 5,95
+#define BDCR_BDRST 6,124
+#define BDCR_RTCEN 7,154
+#define RTC_WRITE_PROTECTION_KEY_1 8,184
+#define RTC_WRITE_PROTECTION_KEY_2 9,236
+#define RTC_INIT_MASK 10,288
+#define ISR_INITF 11,322
+#define WEEKDAY_FRIDAY 12,350
+#define MONTH_DECEMBER 13,390
+#define TIME_FORMAT_PM 14,430
+#define CR_FMT 15,464
+#define ISR_RSF 16,489
+#define RTC_ASYNCH_PREDIV 17,515
+#define RTC_SYNCH_PREDIV 18,558
+static void rtc_set_asynch_prescaler(20,603
+static void rtc_set_synch_prescaler(25,770
+void _rtc_enable_init_mode(29,896
+void _rtc_disable_init_mode(31,960
+uint8_t _rtc_isActiveflag_init(33,1026
+uint8_t _rtc_isActiveflag_rs(37,1116
+static uint8_t rtc_init_seq(39,1198
+static uint8_t wait_for_synchro(48,1384
+static uint8_t exit_init_seq(57,1567
+static void rtc_date_config(64,1731
+static void rtc_time_config(80,2379
+void rtc_init(96,3039
+uint8_t rtc_convert_dec2bcd(138,4376
+uint8_t rtc_convert_bcd2dec(142,4487
+uint32_t rtc_date_get_day(148,4688
+uint32_t rtc_date_get_year(153,4829
+uint32_t rtc_date_get_month(158,4971
+uint32_t rtc_time_get_second(163,5114
+uint32_t rtc_time_get_minute(168,5256
+uint32_t rtc_time_get_hour(173,5401
+
+src/spi.c,265
+#define SPI1EN 2,17
+#define GPIOAEN 3,43
+#define SR_TXE 4,69
+#define SR_RXNE 5,94
+#define SR_BSY 6,120
+void spi_gpio_init(7,145
+void spi1_config(40,1049
+void spi1_transmit(65,1711
+void spi1_receive(86,2171
+void cs_enable(98,2442
+void cs_disable(100,2518
+
+src/ssd1306.c,322
+static void ssd1306_cmd(9,286
+static void ssd1306_data(13,404
+void ssd1306_init(19,598
+void ssd1306_clear(50,1625
+void ssd1306_draw_pixel(56,1742
+void ssd1306_update(69,2046
+static const uint8_t font5x8[font5x878,2289
+void ssd1306_draw_char(176,6701
+void ssd1306_draw_string(186,6941
+void ssd1306_fill(195,7134
+
+src/syscalls.c,271
+int _write(7,122
+int _read(17,369
+int _close(18,423
+int _fstat(19,459
+int _isatty(20,511
+int _lseek(21,547
+void _exit(22,600
+int _kill(26,645
+int _getpid(27,688
+static uint8_t heap[heap29,765
+static uint8_t *heap_ptr heap_ptr30,791
+void *_sbrk(_sbrk31,824
+
+src/systick.c,142
+#define CTRL_ENABLE 2,21
+#define CTRL_CLCKSRC 3,51
+#define CTRL_COUNTFLAG 4,82
+#define ONE_MSEC_LOAD 6,166
+void systick_msec_delay(7,194
+
+src/tim.c,68
+#define TIM2EN 2,17
+#define GPIOBEN 4,43
+void tim2_pwm_init(6,70
+
+src/uart.c,351
+#define GPIOAEN 3,38
+#define UART2EN 4,64
+#define DBG_UART_BAUDRATE 5,91
+#define SYS_FREQ 6,122
+#define APB1_CLK 7,148
+#define CR1_TE 8,174
+#define CR1_UE 9,199
+#define SR_TXE 10,225
+int __io_putchar(13,353
+void uart_init(17,413
+static void uart_write(37,1037
+static uint16_t compute_uart_bd(44,1225
+static void uart_set_baudrate(47,1355
+
+src/uart_dma.c,1200
+#define UART2EN 2,22
+#define GPIOAEN 3,49
+#define CR1_TE 4,75
+#define CR1_RE 5,100
+#define CR1_UE 6,125
+#define SR_TXE 7,151
+#define CR3_DMAT 8,176
+#define CR3_DMAR 9,203
+#define SR_TC 10,230
+#define CR1_TCIE 11,254
+#define UART_BAUDRATE 12,281
+#define CLK 13,308
+#define DMA1EN 14,329
+#define DMA_SCR_EN 15,355
+#define DMA_SCR_MINC 16,384
+#define DMA_SCR_PINC 17,416
+#define DMA_SCR_CIRC 18,447
+#define DMA_SCR_TCIE 19,478
+#define DMA_SCR_TEIE 20,509
+#define DMA_SFCR_DMDIS 21,540
+#define HIFCR_CDMEIF5 22,573
+#define HIFCR_CTEIF5 23,605
+#define HIFCR_CTCIF5 24,636
+#define HIFCR_CDMEIF6 25,668
+#define HIFCR_CTEIF6 26,701
+#define HIFCR_CTCIF6 27,733
+#define HIFSR_TCIF5 28,765
+#define HIFSR_TCIF6 29,796
+char uart_data_buffer[uart_data_buffer32,971
+uint8_t g_rx_cmplt;33,1015
+uint8_t g_tx_cmplt;34,1035
+uint8_t g_uart_cmplt;35,1055
+void uart2_rx_tx_init(36,1077
+void dma1_init(74,2383
+void dma1_stream5_uart_rx_config(80,2547
+void dma1_stream6_uart_tx_config(112,3661
+static uint16_t compute_uart_bd(140,4620
+static void uart_set_baudrate(143,4750
+void DMA1_Stream6_IRQHandler(146,4879
+void DMA1_Stream5_IRQHandler(154,5055
+void USART2_IRQHandler(161,5210
+
+stm32f411_startup.c,2311
+void NMI_Handler(30,687
+void HardFault_Handler(31,759
+void MemManage_Handler(32,837
+void BusFault_Handler(33,915
+void UsageFault_Handler(34,992
+void SVC_Handler(35,1071
+void DebugMon_Handler(36,1143
+void PendSV_Handler(37,1220
+void SysTick_Handler(38,1295
+void WWDG_IRQHandler(39,1371
+void PVD_IRQHandler(40,1447
+void TAMP_STAMP_IRQHandler(41,1522
+void RTC_WKUP_IRQHandler(43,1608
+void FLASH_IRQHandler(44,1688
+void RCC_IRQHandler(45,1765
+void EXTI0_IRQHandler(46,1840
+void EXTI1_IRQHandler(47,1917
+void EXTI2_IRQHandler(48,1994
+void EXTI3_IRQHandler(49,2071
+void EXTI4_IRQHandler(50,2148
+void DMA1_Stream0_IRQHandler(51,2225
+void DMA1_Stream1_IRQHandler(53,2313
+void DMA1_Stream2_IRQHandler(55,2401
+void DMA1_Stream3_IRQHandler(57,2489
+void DMA1_Stream4_IRQHandler(59,2577
+void DMA1_Stream5_IRQHandler(61,2665
+void DMA1_Stream6_IRQHandler(63,2753
+void ADC_IRQHandler(65,2841
+void EXTI9_5_IRQHandler(66,2916
+void TIM1_BRK_TIM9_IRQHandler(67,2995
+void TIM1_UP_TIM10_IRQHandler(69,3084
+void TIM1_TRG_COM_TIM11_IRQHandler(71,3173
+void TIM1_CC_IRQHandler(73,3267
+void TIM2_IRQHandler(74,3346
+void TIM3_IRQHandler(75,3422
+void TIM4_IRQHandler(76,3498
+void I2C1_EV_IRQHandler(77,3574
+void I2C1_ER_IRQHandler(78,3653
+void I2C2_EV_IRQHandler(79,3732
+void I2C2_ER_IRQHandler(80,3811
+void SPI1_IRQHandler(81,3890
+void SPI2_IRQHandler(82,3966
+void USART1_IRQHandler(83,4042
+void USART2_IRQHandler(84,4120
+void EXTI15_10_IRQHandler(85,4198
+void RTC_Alarm_IRQHandler(86,4279
+void OTG_FS_WKUP_IRQHandler(87,4360
+void DMA1_Stream7_IRQHandler(89,4447
+void SDIO_IRQHandler(91,4535
+void TIM5_IRQHandler(92,4611
+void SPI3_IRQHandler(93,4687
+void DMA2_Stream0_IRQHandler(94,4763
+void DMA2_Stream1_IRQHandler(96,4851
+void DMA2_Stream2_IRQHandler(98,4939
+void DMA2_Stream3_IRQHandler(100,5027
+void DMA2_Stream4_IRQHandler(102,5115
+void OTG_FS_IRQHandler(104,5203
+void DMA2_Stream5_IRQHandler(105,5281
+void DMA2_Stream6_IRQHandler(107,5369
+void DMA2_Stream7_IRQHandler(109,5457
+void USART6_IRQHandler(111,5545
+void I2C3_EV_IRQHandler(112,5623
+void I2C3_ER_IRQHandler(113,5702
+void FPU_IRQHandler(114,5781
+void SPI4_IRQHandler(115,5856
+void SPI5_IRQHandler(116,5932
+uint32_t vector_tbl[vector_tbl120,6029
+void Default_Handler(237,13480
+void Reset_Handler(242,13530
+
+engine/engine.c,259
+static Filter filter_init(6,78
+void filter_set_cutoff(17,254
+Engine engine_init(22,410
+static int16_t filter_process(33,642
+void engine_set_steps(47,915
+void engine_set_bpm(58,1171
+static int16_t oscillator(60,1230
+sample_t engine_next_sample(91,1986
