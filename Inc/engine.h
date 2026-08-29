@@ -3,13 +3,8 @@
 
 #include <stdint.h>
 
-#ifdef PLATFORM_STM32
-typedef uint16_t sample_t;
-#define SAMPLE_MAX 4095
-#else
 typedef int16_t sample_t;
 #define SAMPLE_MAX 32767
-#endif
 
 typedef enum {
   NOTE_REST = 0,
