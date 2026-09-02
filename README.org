@@ -289,7 +289,8 @@ unknown instead of two.
 
 ** Phase 1 - Engine correctness (desktop only, no hardware)
 
-*** NEXT Restore =make cli= - finish the engine refactor
+*** DONE Restore =make cli= - finish the engine refactor
+CLOSED: [2026-08-31 Mon 19:56]
     =engine.c= is mid-refactor and does not compile (=oscillator(e->wave, )=,
     undefined =current_cycle=/=period=, stale =sample_idx= init). Get the host
     build green before anything else.

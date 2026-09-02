@@ -1,9 +1,13 @@
 #include "platform.h"
 #include <stdint.h>
 #include <stdio.h>
-int main(void) { platform_init(); }
 
-/* #include "gpio.h" */
+int main(void) {
+  platform_init();
+  return 0;
+}
+
+/* #INCLUDE "gpio.h" */
 /* #include "gpio_exti.h" */
 /* #include "stm32f4xx.h" */
 /* #include "tim.h" */

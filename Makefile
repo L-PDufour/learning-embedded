@@ -7,7 +7,7 @@
 #
 # The first target (all) is what plain `make` builds.
 
-CFLAGS_COMMON = -std=gnu11 -Wall -Wextra -I Inc
+CFLAGS_COMMON = -std=c89 -Wall -Wextra -Wpedantic -Werror -I Inc
 
 # ---- ARM firmware ----
 CC_ARM = arm-none-eabi-gcc

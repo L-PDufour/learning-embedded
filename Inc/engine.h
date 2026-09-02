@@ -108,34 +108,26 @@ typedef enum {
 } MusicNote;
 
 static const int NOTE_FREQUENCIES[NOTE_COUNT] = {
-    0,    16,   17,   18,   19,   21,   22,
-    23,   24,   26,   28,   29,   31, // C0-B0
-    33,   35,   37,   39,   41,   44,   46,
-    49,   52,   55,   58,   62, // C1-B1
-    65,   69,   73,   78,   82,   87,   92,
-    98,   104,  110,  117,  123, // C2-B2
-    131,  139,  147,  156,  165,  175,  185,
-    196,  208,  220,  233,  247, // C3-B3
-    262,  277,  294,  311,  330,  349,  370,
-    392,  415,  440,  466,  494, // C4-B4
-    523,  554,  587,  622,  659,  698,  740,
-    784,  831,  880,  932,  988, // C5-B5
-    1047, 1109, 1175, 1245, 1319, 1397, 1480,
-    1568, 1661, 1760, 1865, 1976, // C6-B6
-    2093, 2217, 2349, 2489, 2637, 2794, 2960,
-    3136, 3322, 3520, 3729, 3951, // C7-B7
+    0,    16,   17,   18,   19,   21,   22,   23,   24,   26,   28,
+    29,   31,   33,   35,   37,   39,   41,   44,   46,   49,   52,
+    55,   58,   62,   65,   69,   73,   78,   82,   87,   92,   98,
+    104,  110,  117,  123,  131,  139,  147,  156,  165,  175,  185,
+    196,  208,  220,  233,  247,  262,  277,  294,  311,  330,  349,
+    370,  392,  415,  440,  466,  494,  523,  554,  587,  622,  659,
+    698,  740,  784,  831,  880,  932,  988,  1047, 1109, 1175, 1245,
+    1319, 1397, 1480, 1568, 1661, 1760, 1865, 1976, 2093, 2217, 2349,
+    2489, 2637, 2794, 2960, 3136, 3322, 3520, 3729, 3951,
 };
 
-typedef enum {
-  WAVE_SQUARE,
-  WAVE_SAW,
-  WAVE_TRIANGLE,
-  WAVE_SINE,
-} WaveType;
+typedef struct {
+  MusicNote note;
+  uint8_t enabled;
+} Step;
+Step steps[32];
 
-typedef enum {
-  FILTER_LOW_PASS,
-} FilterType;
+typedef enum { WAVE_SQUARE, WAVE_SAW, WAVE_TRIANGLE, WAVE_SINE } WaveType;
+
+typedef enum { FILTER_LOW_PASS } FilterType;
 
 typedef struct filter {
   float filter_state;
@@ -146,7 +138,7 @@ typedef struct filter {
 
 typedef struct engine {
   int num_steps;
-  int steps[32];
+  Step steps[32];
   int bpm;
   int current_step;
   int step_sample_count;

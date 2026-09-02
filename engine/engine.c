@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#define PI_F 3.14159265358979323846f
+
 static Filter filter_init() {
   Filter filter;
 
@@ -12,7 +14,7 @@ static Filter filter_init() {
   filter.filter = FILTER_LOW_PASS;
 
   return filter;
-};
+}
 
 void filter_set_cutoff(Filter *f, float cutoff) {
   f->cutoff = cutoff;
@@ -47,13 +49,17 @@ static int16_t filter_process(Filter *f, int16_t sample) {
 }
 
 void engine_set_steps(Engine *e, int maxSteps, MusicNote *n) {
+  int i;
+
   if (maxSteps > 32)
     maxSteps = 32;
   if (maxSteps < 1)
     maxSteps = 1;
   e->num_steps = maxSteps;
-  for (int i = 0; i < maxSteps; i++) {
-    e->steps[i] = NOTE_FREQUENCIES[n[i]];
+
+  for (i = 0; i < maxSteps; i++) {
+    e->steps[i].note = n[i];
+    e->steps[i].enabled = n[i] != NOTE_REST;
   }
 }
 
@@ -75,7 +81,7 @@ static int16_t oscillator(WaveType wave, uint32_t phase) {
                         : (3.0f - 4.0f * p) * AMPLITUDE;
     break;
   case WAVE_SINE:
-    sample = sinf(2.0f * M_PI * p) * AMPLITUDE;
+    sample = sin(2.0f * PI_F * p) * AMPLITUDE;
     break;
   default:
     sample = 0;
@@ -86,7 +92,11 @@ static int16_t oscillator(WaveType wave, uint32_t phase) {
 
 int16_t engine_next_sample(Engine *e) {
 
-  int samples_per_step = (SAMPLE_RATE * 60) / (e->bpm * 4);
+  int samples_per_step;
+  int16_t sample;
+  int freq;
+  samples_per_step = (SAMPLE_RATE * 60) / (e->bpm * 4);
+
   e->step_sample_count++;
   if (e->step_sample_count >= samples_per_step) {
     e->step_sample_count = 0;
@@ -94,11 +104,17 @@ int16_t engine_next_sample(Engine *e) {
     if (e->current_step >= e->num_steps)
       e->current_step = 0;
   }
-  int freq = e->steps[e->current_step];
+
+  if (!e->steps[e->current_step].enabled) {
+    return 0;
+  }
+  freq = NOTE_FREQUENCIES[e->steps[e->current_step].note];
+
   e->phase_inc = (uint32_t)(freq * (4294967296.0 / SAMPLE_RATE));
   e->phase_acc += e->phase_inc;
 
-  int16_t sample = oscillator(e->wave, e->phase_acc);
+  sample = oscillator(e->wave, e->phase_acc);
+
   sample = filter_process(&e->filter, sample);
   return sample;
 }
