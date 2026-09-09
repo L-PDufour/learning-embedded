@@ -1,8 +1,8 @@
-a #include "engine.h"
+#include "engine.h"
 #include "platform.h"
 #include <stdio.h>
 
-    static Engine e;
+static Engine e;
 static const MusicNote melody[32] = {
     NOTE_E5,   NOTE_DS5, NOTE_E5,   NOTE_DS5, NOTE_E5, NOTE_B4,   NOTE_D5,
     NOTE_C5,   NOTE_A4,  NOTE_REST, NOTE_C4,  NOTE_E4, NOTE_A4,   NOTE_B4,

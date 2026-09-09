@@ -295,16 +295,20 @@ CLOSED: [2026-08-31 Mon 19:56]
     undefined =current_cycle=/=period=, stale =sample_idx= init). Get the host
     build green before anything else.
 *** DONE Un-swap =WAVE_SAW= and =WAVE_SINE=
-*** TODO Fix the rest check - compare note index, not frequency
-*** TODO Reconcile =engine_next_sample= signature
+*** DONE Fix the rest check - compare note index, not frequency
+CLOSED: [2026-09-02 Wed 06:01]
+*** DONE Reconcile =engine_next_sample= signature
+CLOSED: [2026-09-02 Wed 06:01]
     Delete the =PLATFORM_STM32= sample-type split; standardise on =int16_t=.
-*** TODO Add per-note phase accumulator
+*** DONE Add per-note phase accumulator
+CLOSED: [2026-09-08 Tue 20:49]
     Fractional increment. Fixes both step-boundary clicks and upper-octave
     detuning in one change.
 *** DONE Decide step subdivision
     16ths: =samples_per_step = SAMPLE_RATE * 60 / (bpm * 4)=. 8 steps = 1 s @
     120 BPM.
-*** TODO Move =SAMPLE_RATE= to 48000
+*** DONE Move =SAMPLE_RATE= to 48000
+CLOSED: [2026-09-08 Tue 20:49]
     Divides cleanly off PLLI2S later. Doing it now means the desktop build and
     the hardware build agree, and pitch bugs surface on the easy platform.
 

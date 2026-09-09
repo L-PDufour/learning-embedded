@@ -123,7 +123,6 @@ typedef struct {
   MusicNote note;
   uint8_t enabled;
 } Step;
-Step steps[32];
 
 typedef enum { WAVE_SQUARE, WAVE_SAW, WAVE_TRIANGLE, WAVE_SINE } WaveType;
 
@@ -144,6 +143,7 @@ typedef struct engine {
   int step_sample_count;
   uint32_t phase_acc;
   uint32_t phase_inc;
+  MusicNote current_note;
 
   Filter filter;
 
@@ -151,7 +151,7 @@ typedef struct engine {
 
 } Engine;
 
-#define SAMPLE_RATE 22050
+#define SAMPLE_RATE 48000
 #define AMPLITUDE (SAMPLE_MAX / 2)
 Engine engine_init(void);
 int16_t engine_next_sample(Engine *e);

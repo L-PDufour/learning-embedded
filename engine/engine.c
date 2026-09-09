@@ -28,6 +28,7 @@ Engine engine_init() {
   engine.current_step = 0;
   engine.step_sample_count = 0;
   engine.phase_acc = 0;
+  engine.current_note = NOTE_REST;
   engine.wave = WAVE_SQUARE;
   engine.filter = filter_init();
   filter_set_cutoff(&engine.filter, 4000);
@@ -106,14 +107,19 @@ int16_t engine_next_sample(Engine *e) {
   }
 
   if (!e->steps[e->current_step].enabled) {
+    e->current_note = NOTE_REST;
     return 0;
   }
-  freq = NOTE_FREQUENCIES[e->steps[e->current_step].note];
 
-  e->phase_inc = (uint32_t)(freq * (4294967296.0 / SAMPLE_RATE));
-  e->phase_acc += e->phase_inc;
+  if (e->steps[e->current_step].note != e->current_note) {
+    e->current_note = e->steps[e->current_step].note;
+    freq = NOTE_FREQUENCIES[e->current_note];
+    e->phase_acc = 0;
+    e->phase_inc = (uint32_t)(freq * (4294967296.0 / SAMPLE_RATE));
+  }
 
   sample = oscillator(e->wave, e->phase_acc);
+  e->phase_acc += e->phase_inc;
 
   sample = filter_process(&e->filter, sample);
   return sample;
