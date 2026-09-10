@@ -4,8 +4,6 @@
 /synth.elf
 /synth.map
 /.cache/clangd/index
-/chip_headers
-/cmsis-device-f4
 /AGENTS.md
 /synth
 /.synth-tabspaces-session.el
