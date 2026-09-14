@@ -20,6 +20,7 @@
           packages = with pkgs; [
             # Cross-compiler toolchain (ARM bare-metal)
             gcc
+            gcc-arm-embedded
             # Flashing & on-chip debugging
             openocd
             stlink # st-flash, st-info

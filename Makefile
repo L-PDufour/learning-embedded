@@ -7,18 +7,19 @@
 #
 # The first target (all) is what plain `make` builds.
 
-CFLAGS_COMMON = -std=c89 -Wall -Wextra -Wpedantic -Werror -I Inc
+CFLAGS_COMMON = -std=c99 -Wall -Wextra -Wpedantic -Werror -I Inc
 
 # ---- ARM firmware ----
 CC_ARM = arm-none-eabi-gcc
-ARM_CFLAGS = -c -mcpu=cortex-m4 -mthumb -DSTM32F446xx -fno-builtin \
+ARM_CFLAGS = -c -mcpu=cortex-m4 -mthumb -DSTM32F411xE -fno-builtin \
              -Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include \
              -Ichip_headers/CMSIS/Include
 ARM_LDFLAGS = -mcpu=cortex-m4 -mthumb -nostdlib \
               -T stm32_ls.ld \
               -Wl,-Map=synth.map
 ARM_LIBS = -lc -lnosys -lgcc
-ARM_SRCS = $(wildcard src/*.c) $(wildcard *.c)
+ARM_SRCS = stm32f411_startup.c main.c src/platform_stm.c src/systick.c src/gpio.c
+
 ARM_TARGET = synth.elf
 
 all: $(ARM_TARGET)

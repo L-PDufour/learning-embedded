@@ -1,6 +1,4 @@
 #include "platform.h"
-#include <stdint.h>
-#include <stdio.h>
 
 int main(void) {
   platform_init();

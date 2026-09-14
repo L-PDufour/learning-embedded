@@ -97,7 +97,6 @@ int16_t engine_next_sample(Engine *e) {
   int16_t sample;
   int freq;
   samples_per_step = (SAMPLE_RATE * 60) / (e->bpm * 4);
-
   e->step_sample_count++;
   if (e->step_sample_count >= samples_per_step) {
     e->step_sample_count = 0;
