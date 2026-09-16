@@ -3,4 +3,6 @@
 #include "stm32f4xx.h"
 #include <stdint.h>
 void systick_msec_delay(uint32_t delay);
+void systick_init(void);
+uint32_t systick_millis(void);
 #endif

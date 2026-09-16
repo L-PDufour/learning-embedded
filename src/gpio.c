@@ -35,3 +35,7 @@ void led_init(void) {
 }
 
 void led_toggle(void) { GPIOD->ODR ^= (1U << 13); }
+
+void led_on(void) { GPIOD->BSRR = GPIO_BSRR_BS13; }
+
+void led_off(void) { GPIOD->BSRR = GPIO_BSRR_BR13; }
