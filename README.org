@@ -10,9 +10,10 @@ A bare-metal software synthesizer running on the STM32F411E-DISCOVERY, built
 with a clean layered architecture targeting multiple platforms from the same
 C99 engine. Designed to be fun for a kid.
 
-Status: August 2026 - behind the original schedule. Re-scoped: an audible
-8-step pentatonic MVP on desktop comes first. Embedded output layer not yet
-written.
+Status: September 2026. Codec bring-up is underway on hardware: reset, the I2C
+control bus, the chip-ID read, and the CS43L22 init sequence are done and
+verified on the board. The I2S data path (first sound) is next. Host-side
+MVP work (Phase 2) is still pending.
 
 * Goals
 
@@ -263,19 +264,19 @@ Do not rewrite these - they cut real work off the codec path.
 | =src/dma.c=   | DMA idioms already understood, needs retarget to I2S   |
 
 *** Caveat on =i2c.c=
-It maps *PB8 = SCL, PB9 = SDA* and hardcodes =I2C1->CR2 = 16= (16 MHz PCLK1).
-The CS43L22 control pins on this board must be confirmed against UM1842 - they
-may not be PB8. If the codec sits on a different SCL pin than the OLED, a
-second pin-config path is needed. Also: raising the system clock for audio
-will silently break the hardcoded I2C timing.
+Resolved (Sep 2026): the CS43L22 sits on *PB6 = SCL, PB9 = SDA* (AF4), not the
+PB8 the OLED driver assumed. =src/i2c.c= now configures the pins from a
+descriptor and exposes a single-byte write. It still hardcodes
+=I2C1->CR2 = 16= (16 MHz PCLK1); raising the system clock later would silently
+break the I2C timing, so revisit that when the clock tree changes.
 
 * Development Strategy
 
 ** Progression
-1. Fix engine bugs, validate on desktop  <- *current phase*
+1. Fix engine bugs, validate on desktop
 2. Cut CLI down to 8-step pentatonic MVP
 3. Restructure steps to note + on/off
-4. Codec bring-up on hardware
+4. Codec bring-up on hardware  <- *current phase*
 5. Port engine to STM32 behind =fill_buffer=
 6. Add buttons and potentiometer on breadboard
 7. Polish, document, demo
@@ -334,22 +335,32 @@ accumulator already removes most click artifacts.
 
 ** Phase 4 - Codec bring-up (hardware)
 
-*** BLOCKED Confirm pinout in UM1842
-    Blocks everything else in this phase. Need: codec I2C pins (vs. the
-    PB8/PB9 already in =i2c.c=), codec RESET pin, and I2S3 SCK/SD/WS/MCK.
-*** TODO Release codec from reset
-    Active-low RESET tied to a GPIO. If it stays low the chip will not even
-    ACK on I2C. Most common cause of silent-jack.
-*** TODO Read CS43L22 chip ID over I2C
-    Cheapest sanity check in the whole chain. Do not proceed until this
-    returns a plausible ID.
-*** TODO Codec init sequence
-    Crib the ordering from =stm32f4_discovery_audio_codec.c= in STM32CubeF4.
-    ST's BSP contains an undocumented magic register sequence that is not in
-    the Cirrus datasheet; without it the chip stays silent with no error.
-    Set: I2S Philips format, 16-bit, headphone output, non-zero volume.
-*** TODO Configure PLLI2S and I2S prescaler
-    PLLI2SN / PLLI2SR in RCC, then I2SDIV and ODD. MCK output must be enabled.
+*** DONE Confirm pinout in UM1842
+CLOSED: [2026-09-17 Thu]
+    Confirmed from UM1842 / ST BSP (32f411ediscovery-bsp):
+    - Codec control: I2C1 SCL = PB6 (AF4), SDA = PB9 (AF4)
+    - Codec reset: PD4 (push-pull; drive high to release)
+    - I2S3: MCK = PC7, SCK = PC10, SD = PC12, WS = PA4 (all AF6)
+    - I2S DMA: DMA1 Stream7, channel 0, half-word, memory-to-peripheral
+    - Codec 7-bit address 0x4A; chip ID reg 0x01, ID 0xE0 (mask 0xF8)
+*** DONE Release codec from reset
+CLOSED: [2026-09-17 Thu]
+    Active-low RESET tied to PD4. =codec_reset()= pulses low then high, leaves
+    it high; measured ~2.9 V (VDD) after boot. If it stays low the chip will
+    not even ACK on I2C. Most common cause of silent-jack.
+*** DONE Read CS43L22 chip ID over I2C
+CLOSED: [2026-09-17 Thu]
+    =i2c1_byte_read(0x4A, 0x01)= returns 0xE0 on hardware. Cheapest sanity
+    check in the whole chain.
+*** DONE Codec init sequence
+CLOSED: [2026-09-17 Thu]
+    =codec_init()= in =src/codec.c=: 15 register writes (auto-detect output,
+    I2S slave, volumes, and the soft-ramp tail ST omits from the datasheet).
+    Verified by writing MASTER_A_VOL and reading it back (0xE5). Leaves the
+    codec powered off; power-on belongs to the next item.
+*** NEXT Configure PLLI2S and I2S prescaler
+    HSE 8 MHz -> PLLI2S M=8 / N=258 / R=3 = 86 MHz I2SxCLK, then I2SDIV/ODD
+    for 48 kHz. MCK output must be enabled (codec is I2S slave).
 *** TODO DMA circular, half-word, mem-to-periph into =SPI3->DR=
     Half-transfer + transfer-complete interrupts; engine fills the half DMA is
     not reading.

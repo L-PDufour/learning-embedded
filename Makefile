@@ -19,7 +19,7 @@ ARM_LDFLAGS = -mcpu=cortex-m4 -mthumb -nostdlib \
               -Wl,-Map=synth.map
 ARM_LIBS = -lc -lnosys -lgcc
 ARM_SRCS = stm32f411_startup.c main.c src/platform_stm.c src/systick.c \
-	   src/gpio.c src/i2c.c
+	   src/gpio.c src/i2c.c src/codec.c
 
 ARM_TARGET = synth.elf
 

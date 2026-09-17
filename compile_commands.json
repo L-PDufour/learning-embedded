@@ -123,5 +123,55 @@
     ],
     "directory": "/home/desktop/Documents/synth",
     "output": "src/gpio.o"
+  },
+  {
+    "file": "src/i2c.c",
+    "arguments": [
+      "arm-none-eabi-gcc",
+      "-std=c99",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-I",
+      "Inc",
+      "-c",
+      "-mcpu=cortex-m4",
+      "-mthumb",
+      "-DSTM32F411xE",
+      "-fno-builtin",
+      "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
+      "-Ichip_headers/CMSIS/Include",
+      "src/i2c.c",
+      "-o",
+      "src/i2c.o"
+    ],
+    "directory": "/home/desktop/Documents/synth",
+    "output": "src/i2c.o"
+  },
+  {
+    "file": "src/codec.c",
+    "arguments": [
+      "arm-none-eabi-gcc",
+      "-std=c99",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-I",
+      "Inc",
+      "-c",
+      "-mcpu=cortex-m4",
+      "-mthumb",
+      "-DSTM32F411xE",
+      "-fno-builtin",
+      "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
+      "-Ichip_headers/CMSIS/Include",
+      "src/codec.c",
+      "-o",
+      "src/codec.o"
+    ],
+    "directory": "/home/desktop/Documents/synth",
+    "output": "src/codec.o"
   }
 ]

@@ -1,6 +1,7 @@
 #include "i2c.h"
 #include "stm32f4xx.h"
 #include "systick.h"
+#include <stdint.h>
 
 #define GPIOBEN (1U << 1)
 #define I2C1EN (1U << 21)
@@ -343,4 +344,8 @@ I2cStatus i2c1_burst_write(uint8_t saddr, uint8_t maddr, int n,
   /* Generate stop */
   I2C1->CR1 |= CR1_STOP;
   return I2C_OK;
+}
+
+I2cStatus i2c1_byte_write(uint8_t saddr, uint8_t maddr, uint8_t data) {
+  return i2c1_burst_write(saddr, maddr, 1, &data);
 }

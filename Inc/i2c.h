@@ -13,6 +13,7 @@ void i2c1_init(void);
 I2cStatus i2c1_byte_read(uint8_t saddr, uint8_t maddr, uint8_t *data);
 I2cStatus i2c1_burst_read(uint8_t saddr, uint8_t maddr, int n, uint8_t *data);
 I2cStatus i2c1_burst_write(uint8_t saddr, uint8_t maddr, int n,
-                            const uint8_t *data);
+                           const uint8_t *data);
 
+I2cStatus i2c1_byte_write(uint8_t saddr, uint8_t maddr, uint8_t data);
 #endif
