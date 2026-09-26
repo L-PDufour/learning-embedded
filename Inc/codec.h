@@ -12,6 +12,7 @@
 #define CS43L22_REG_MASTER_A_VOL 0x20
 
 I2cStatus codec_init(void);
+I2cStatus codec_play(void);
 uint8_t codec_volume_reg(void); /* encoded value written to MASTER_x_VOL */
 
 #endif

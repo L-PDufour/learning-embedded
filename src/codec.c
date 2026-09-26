@@ -1,4 +1,5 @@
 #include "codec.h"
+#include "i2c.h"
 
 #define REG_POWER_CTL1 0x02
 #define REG_POWER_CTL2 0x04
@@ -15,6 +16,8 @@
 #define REG_SPEAKER_A_VOL 0x24
 #define REG_SPEAKER_B_VOL 0x25
 #define REG_LIMIT_CTL1 0x27
+#define REG_HEADPHONE_VOL_A 0x22
+#define REG_HEADPHONE_VOL_B 0x23
 
 static uint8_t volume_to_reg(uint8_t percent) {
   uint32_t v = ((uint32_t)percent * 255U) / 100U;
@@ -37,9 +40,9 @@ I2cStatus codec_init(void) {
   s = wr(REG_POWER_CTL1, 0x01);
   if (s != I2C_OK)
     return s; /* stay off */
-  s = wr(REG_POWER_CTL2, 0x05);
+  s = wr(REG_POWER_CTL2, 0xAF);
   if (s != I2C_OK)
-    return s; /* auto-detect */
+    return s; /* headphone output (3.5mm jack) */
   s = wr(REG_CLOCKING_CTL, 0x81);
   if (s != I2C_OK)
     return s; /* auto clock */
@@ -80,5 +83,25 @@ I2cStatus codec_init(void) {
   if (s != I2C_OK)
     return s;
 
+  return I2C_OK;
+}
+
+I2cStatus codec_play(void) {
+  I2cStatus s;
+  s = wr(REG_MISC_CTL, 0x06);
+  if (s != I2C_OK)
+    return s;
+  s = wr(REG_HEADPHONE_VOL_A, 0x00);
+  if (s != I2C_OK)
+    return s;
+  s = wr(REG_HEADPHONE_VOL_B, 0x00);
+  if (s != I2C_OK)
+    return s;
+  s = wr(REG_POWER_CTL2, 0xAF);
+  if (s != I2C_OK)
+    return s;
+  s = wr(REG_POWER_CTL1, 0x9E);
+  if (s != I2C_OK)
+    return s;
   return I2C_OK;
 }

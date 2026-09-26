@@ -11,7 +11,7 @@ CFLAGS_COMMON = -std=c99 -Wall -Wextra -Wpedantic -Werror -I Inc
 
 # ---- ARM firmware ----
 CC_ARM = arm-none-eabi-gcc
-ARM_CFLAGS = -c -mcpu=cortex-m4 -mthumb -DSTM32F411xE -fno-builtin \
+ARM_CFLAGS = -c -g -mcpu=cortex-m4 -mthumb -DSTM32F411xE -fno-builtin \
              -Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include \
              -Ichip_headers/CMSIS/Include
 ARM_LDFLAGS = -mcpu=cortex-m4 -mthumb -nostdlib \
@@ -19,7 +19,7 @@ ARM_LDFLAGS = -mcpu=cortex-m4 -mthumb -nostdlib \
               -Wl,-Map=synth.map
 ARM_LIBS = -lc -lnosys -lgcc
 ARM_SRCS = stm32f411_startup.c main.c src/platform_stm.c src/systick.c \
-	   src/gpio.c src/i2c.c src/codec.c
+	   src/gpio.c src/i2c.c src/codec.c src/i2s.c
 
 ARM_TARGET = synth.elf
 
