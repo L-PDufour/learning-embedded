@@ -5,6 +5,12 @@
 #include "platform.h"
 #include "systick.h"
 
+#define BLOCK 256
+
+static Engine e;
+static const MusicNote melody[5] = {NOTE_C4, NOTE_D4, NOTE_E4, NOTE_G4,
+                                    NOTE_A4};
+static sample_t buf[BLOCK];
 /* Blink `count` times, then pause, forever. Used to report the codec
  * probe result with no terminal or debugger attached. */
 static void blink_forever(int count, uint32_t on_ms, uint32_t off_ms,
@@ -25,6 +31,7 @@ static void blink_forever(int count, uint32_t on_ms, uint32_t off_ms,
 void platform_init(void) {
   uint8_t id = 0;
   uint8_t vol = 0;
+
   I2cStatus status;
   I2cStatus clock_status;
 
@@ -34,7 +41,10 @@ void platform_init(void) {
   clock_status = i2s_clock_init();
   i2s3_init();
   i2c1_init();
-
+  e = engine_init();
+  engine_set_bpm(&e, 120);
+  engine_set_steps(&e, 5, (MusicNote *)melody);
+  engine_fill_buffer(&e, buf, BLOCK);
   /* Configure the codec, power it on, then prove the write path. */
   status = codec_init();
   if (status == I2C_OK) {

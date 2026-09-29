@@ -1,7 +1,7 @@
 #include "engine.h"
 #include <math.h>
+#include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 
 #define PI_F 3.14159265358979323846f
 
@@ -66,7 +66,7 @@ void engine_set_steps(Engine *e, int maxSteps, MusicNote *n) {
 
 void engine_set_bpm(Engine *e, int bpm) { e->bpm = bpm; }
 
-static int16_t oscillator(WaveType wave, uint32_t phase) {
+static sample_t oscillator(WaveType wave, uint32_t phase) {
   float p = phase * (1.0f / 4294967296.0f); /* clock hand: 0..1 = one cycle */
   float sample;
 
@@ -91,7 +91,7 @@ static int16_t oscillator(WaveType wave, uint32_t phase) {
   return sample;
 }
 
-int16_t engine_next_sample(Engine *e) {
+static sample_t next_sample(Engine *e) {
 
   int samples_per_step;
   int16_t sample;
@@ -122,4 +122,18 @@ int16_t engine_next_sample(Engine *e) {
 
   sample = filter_process(&e->filter, sample);
   return sample;
+}
+
+sample_t engine_next_sample(Engine *e) { return next_sample(e); }
+
+void engine_fill_buffer(Engine *e, sample_t *buf, int n) {
+  int i;
+  if (n == 0)
+    return;
+  if (buf == NULL)
+    return;
+
+  for (i = 0; i < n; i++) {
+    buf[i] = next_sample(e);
+  }
 }

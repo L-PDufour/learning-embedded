@@ -154,8 +154,8 @@ typedef struct engine {
 #define SAMPLE_RATE 48000
 #define AMPLITUDE (SAMPLE_MAX / 2)
 Engine engine_init(void);
-int16_t engine_next_sample(Engine *e);
+sample_t engine_next_sample(Engine *e);
 void engine_set_bpm(Engine *e, int bpm);
 void engine_set_steps(Engine *e, int maxSteps, MusicNote *n);
-
+void engine_fill_buffer(Engine *e, sample_t *buf, int n);
 #endif

@@ -1,3 +1,4 @@
+#include "stm32f4xx.h"
 #include <stdint.h>
 
 /**Build:
@@ -24,6 +25,7 @@ extern uint32_t _ebss;
 /* Function prototypes */
 
 void Reset_Handler(void);
+void FPU_IRQHandler(void);
 int main(void);
 
 /* Exception and Interrupt Handlers */
@@ -254,6 +256,10 @@ void Reset_Handler(void) {
   for (uint32_t i = 0; i < (bss_mem_size / 4); i++) {
     *p_dest_mem++ = 0;
   }
-
+#if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
+  SCB->CPACR |= (0xF << 20); // Enable full access to CP10 and CP11 coprocessors
+#endif
+  __DSB();
+  __ISB();
   main();
 }
