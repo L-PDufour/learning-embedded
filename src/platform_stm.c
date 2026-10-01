@@ -5,12 +5,20 @@
 #include "platform.h"
 #include "systick.h"
 
-#define BLOCK 256
+#define BPM 120
+#define STEPS 8
+#define SAMPLES_PER_STEP (SAMPLE_RATE * 60 / (BPM * 4))
+#define SONG_SAMPLES (STEPS * SAMPLES_PER_STEP)
 
 static Engine e;
-static const MusicNote melody[5] = {NOTE_C4, NOTE_D4, NOTE_E4, NOTE_G4,
-                                    NOTE_A4};
-static sample_t buf[BLOCK];
+/* One bar of sixteenth notes at 120 BPM. C major pentatonic (C D E G A), so
+ * nothing sounds wrong; ending on a rest lets the loop retrigger cleanly. */
+static const MusicNote song[STEPS] = {
+    NOTE_C4, NOTE_E4, NOTE_G4, NOTE_A4,
+    NOTE_G4, NOTE_E4, NOTE_D4, NOTE_REST};
+/* The whole loop, rendered once; circular DMA replays it forever. */
+static sample_t song_buf[SONG_SAMPLES];
+
 /* Blink `count` times, then pause, forever. Used to report the codec
  * probe result with no terminal or debugger attached. */
 static void blink_forever(int count, uint32_t on_ms, uint32_t off_ms,
@@ -40,16 +48,18 @@ void platform_init(void) {
   board_init(); /* release codec reset; PD4 left high */
   clock_status = i2s_clock_init();
   i2s3_init();
-  i2c1_init();
   e = engine_init();
-  engine_set_bpm(&e, 120);
-  engine_set_steps(&e, 5, (MusicNote *)melody);
-  engine_fill_buffer(&e, buf, BLOCK);
+  engine_set_bpm(&e, BPM);
+  engine_set_steps(&e, STEPS, (MusicNote *)song);
+  engine_fill_buffer(&e, song_buf, SONG_SAMPLES);
+  i2s_dma_config(song_buf, SONG_SAMPLES);
+  i2c1_init();
   /* Configure the codec, power it on, then prove the write path. */
   status = codec_init();
   if (status == I2C_OK) {
     status = codec_play();
   }
+  i2s_dma_start();
   if (status == I2C_OK) {
     status = i2c1_byte_read(CS43L22_ADDR, CS43L22_ID_REG, &id);
   }

@@ -21,7 +21,7 @@ ARM_LDFLAGS = $(CPU_FLAGS) $(FPU_FLAGS) -nostdlib \
               -Wl,-Map=synth.map
 ARM_LIBS = -lm -lc -lnosys -lgcc
 ARM_SRCS = stm32f411_startup.c main.c src/platform_stm.c src/systick.c \
-	   src/gpio.c src/i2c.c src/codec.c src/i2s.c engine/engine.c
+	   src/gpio.c src/i2c.c src/codec.c src/i2s.c engine/engine.c src/i2s_dma.c
 ARM_OBJS = $(ARM_SRCS:.c=.o)
 ARM_TARGET = synth.elf
 
