@@ -6,5 +6,8 @@
 void platform_init(void);
 void platform_audio_write(sample_t sample);
 void platform_on_button(int button);
+/* Refill one half of the DMA buffer from the engine. Called from the I2S DMA
+ * interrupt: half 0 on half-transfer, half 1 on transfer-complete. */
+void platform_fill_half(int half);
 
 #endif

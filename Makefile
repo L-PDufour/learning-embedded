@@ -13,7 +13,7 @@ CFLAGS_COMMON = -std=c99 -Wall -Wextra -Wpedantic -Werror -I Inc
 CC_ARM = arm-none-eabi-gcc
 CPU_FLAGS = -mcpu=cortex-m4 -mthumb
 FPU_FLAGS = -mfpu=fpv4-sp-d16 -mfloat-abi=hard
-ARM_CFLAGS = -c -g $(CPU_FLAGS) $(FPU_FLAGS) -DSTM32F411xE -fno-builtin \
+ARM_CFLAGS = -c -g -O2 $(CPU_FLAGS) $(FPU_FLAGS) -DSTM32F411xE -fno-builtin \
              -Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include \
              -Ichip_headers/CMSIS/Include
 ARM_LDFLAGS = $(CPU_FLAGS) $(FPU_FLAGS) -nostdlib \
