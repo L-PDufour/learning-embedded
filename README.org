@@ -10,10 +10,12 @@ A bare-metal software synthesizer running on the STM32F411E-DISCOVERY, built
 with a clean layered architecture targeting multiple platforms from the same
 C99 engine. Designed to be fun for a kid.
 
-Status: September 2026. Codec bring-up is underway on hardware: reset, the I2C
-control bus, the chip-ID read, and the CS43L22 init sequence are done and
-verified on the board. The I2S data path (first sound) is next. Host-side
-MVP work (Phase 2) is still pending.
+Status: October 2026. The codec is fully brought up and audio is live on
+hardware: reset, the I2C control bus, the chip-ID read, the CS43L22 init, the
+I2S3 data path, circular DMA, and a half-transfer/transfer-complete ping-pong
+interrupt that streams the real engine as stereo. The engine now runs in real
+time on the MCU (full 8-step pentatonic melody, 2 KB DMA buffer). Host-side MVP
+work (Phase 2) is still pending.
 
 * Goals
 
@@ -358,13 +360,17 @@ CLOSED: [2026-09-17 Thu]
     I2S slave, volumes, and the soft-ramp tail ST omits from the datasheet).
     Verified by writing MASTER_A_VOL and reading it back (0xE5). Leaves the
     codec powered off; power-on belongs to the next item.
-*** NEXT Configure PLLI2S and I2S prescaler
+*** DONE Configure PLLI2S and I2S prescaler
+CLOSED: [2026-10-01 Thu]
     HSE 8 MHz -> PLLI2S M=8 / N=258 / R=3 = 86 MHz I2SxCLK, then I2SDIV/ODD
     for 48 kHz. MCK output must be enabled (codec is I2S slave).
-*** TODO DMA circular, half-word, mem-to-periph into =SPI3->DR=
+*** DONE DMA circular, half-word, mem-to-periph into =SPI3->DR=
+CLOSED: [2026-10-01 Thu]
     Half-transfer + transfer-complete interrupts; engine fills the half DMA is
-    not reading.
-*** TODO Stereo interleaving in =platform_stm32.c=
+    not reading. =DMA1_Stream7=, circular, 16-bit, memory-to-peripheral; the
+    handler refills the idle half and is the single owner of the engine.
+*** DONE Stereo interleaving in =platform_stm32.c=
+CLOSED: [2026-10-01 Thu]
     I2S wants L,R,L,R. Engine stays mono; the platform layer duplicates. Keep
     this out of the engine.
 

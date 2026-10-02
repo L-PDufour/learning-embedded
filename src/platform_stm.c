@@ -1,4 +1,5 @@
 #include "codec.h"
+#include "engine.h"
 #include "gpio.h"
 #include "i2c.h"
 #include "i2s.h"
@@ -13,9 +14,8 @@
 #define HALF_HALFWORDS (FRAMES_PER_HALF * 2)
 
 static Engine e;
-static const MusicNote song[STEPS] = {
-    NOTE_C4, NOTE_E4, NOTE_G4, NOTE_A4,
-    NOTE_G4, NOTE_E4, NOTE_D4, NOTE_REST};
+static const MusicNote song[STEPS] = {NOTE_C4, NOTE_E4, NOTE_G4, NOTE_A4,
+                                      NOTE_G4, NOTE_E4, NOTE_D4, NOTE_REST};
 static sample_t stereo_buf[TOTAL_FRAMES * 2];
 static sample_t mono_buf[FRAMES_PER_HALF];
 
@@ -77,6 +77,7 @@ void platform_init(void) {
   clock_status = i2s_clock_init();
   i2s3_init();
   e = engine_init();
+  engine_set_wave(&e, WAVE_SQUARE);
   engine_set_bpm(&e, BPM);
   engine_set_steps(&e, STEPS, (MusicNote *)song);
   platform_fill_half(0);

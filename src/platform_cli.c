@@ -13,6 +13,7 @@ void platform_init(void) {
   int i;
 
   e = engine_init();
+  engine_set_wave(&e, WAVE_SINE);
   engine_set_bpm(&e, 120);
   engine_set_steps(&e, 5, (MusicNote *)melody);
 

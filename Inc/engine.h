@@ -158,4 +158,5 @@ sample_t engine_next_sample(Engine *e);
 void engine_set_bpm(Engine *e, int bpm);
 void engine_set_steps(Engine *e, int maxSteps, MusicNote *n);
 void engine_fill_buffer(Engine *e, sample_t *buf, int n);
+void engine_set_wave(Engine *e, WaveType w);
 #endif

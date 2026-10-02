@@ -65,6 +65,7 @@ void engine_set_steps(Engine *e, int maxSteps, MusicNote *n) {
 }
 
 void engine_set_bpm(Engine *e, int bpm) { e->bpm = bpm; }
+void engine_set_wave(Engine *e, WaveType w) { e->wave = w; }
 
 static sample_t oscillator(WaveType wave, uint32_t phase) {
   float p = phase * (1.0f / 4294967296.0f); /* clock hand: 0..1 = one cycle */
@@ -82,7 +83,7 @@ static sample_t oscillator(WaveType wave, uint32_t phase) {
                         : (3.0f - 4.0f * p) * AMPLITUDE;
     break;
   case WAVE_SINE:
-    sample = sin(2.0f * PI_F * p) * AMPLITUDE;
+    sample = sinf(2.0f * PI_F * p) * AMPLITUDE;
     break;
   default:
     sample = 0;
