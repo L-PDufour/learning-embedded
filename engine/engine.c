@@ -1,9 +1,8 @@
 #include "engine.h"
-#include <math.h>
+#include "sine_table.h"
+
 #include <stddef.h>
 #include <stdint.h>
-
-#define PI_F 3.14159265358979323846f
 
 static Filter filter_init() {
   Filter filter;
@@ -83,7 +82,7 @@ static sample_t oscillator(WaveType wave, uint32_t phase) {
                         : (3.0f - 4.0f * p) * AMPLITUDE;
     break;
   case WAVE_SINE:
-    sample = sinf(2.0f * PI_F * p) * AMPLITUDE;
+    sample = sine_table[phase >> (32 - SINE_TABLE_BITS)];
     break;
   default:
     sample = 0;

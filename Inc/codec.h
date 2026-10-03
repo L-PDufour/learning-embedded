@@ -8,7 +8,7 @@
 #define CS43L22_ID 0xE0
 #define CS43L22_ID_MASK 0xF8
 
-#define CS43L22_VOLUME 50
+#define CS43L22_VOLUME 40
 #define CS43L22_REG_MASTER_A_VOL 0x20
 
 I2cStatus codec_init(void);

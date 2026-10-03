@@ -77,7 +77,7 @@ void platform_init(void) {
   clock_status = i2s_clock_init();
   i2s3_init();
   e = engine_init();
-  engine_set_wave(&e, WAVE_SQUARE);
+  engine_set_wave(&e, WAVE_SINE);
   engine_set_bpm(&e, BPM);
   engine_set_steps(&e, STEPS, (MusicNote *)song);
   platform_fill_half(0);
