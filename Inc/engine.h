@@ -143,6 +143,7 @@ typedef struct engine {
   int step_sample_count;
   uint32_t phase_acc;
   uint32_t phase_inc;
+  float ramp;
   MusicNote current_note;
 
   Filter filter;

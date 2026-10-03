@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define MAX_RAMP 256
+
 static Filter filter_init() {
   Filter filter;
 
@@ -30,6 +32,7 @@ Engine engine_init() {
   engine.current_note = NOTE_REST;
   engine.wave = WAVE_SQUARE;
   engine.filter = filter_init();
+  engine.ramp = 0;
   filter_set_cutoff(&engine.filter, 4000);
   return engine;
 }
@@ -93,9 +96,12 @@ static sample_t oscillator(WaveType wave, uint32_t phase) {
 
 static sample_t next_sample(Engine *e) {
 
-  int samples_per_step;
-  int16_t sample;
-  int freq;
+  int samples_per_step = 0;
+  int16_t sample = 0;
+  int freq = 0;
+  float target = 0;
+  float step = 0;
+
   samples_per_step = (SAMPLE_RATE * 60) / (e->bpm * 4);
   e->step_sample_count++;
   if (e->step_sample_count >= samples_per_step) {
@@ -105,12 +111,20 @@ static sample_t next_sample(Engine *e) {
       e->current_step = 0;
   }
 
-  if (!e->steps[e->current_step].enabled) {
-    e->current_note = NOTE_REST;
-    return 0;
+  target = e->steps[e->current_step].enabled ? 1.0f : 0.0f;
+  step = 1.0f / MAX_RAMP;
+  if (e->ramp < target) {
+    e->ramp += step;
+    if (e->ramp > target)
+      e->ramp = target;
+  } else if (e->ramp > target) {
+    e->ramp -= step;
+    if (e->ramp < target)
+      e->ramp = target;
   }
 
-  if (e->steps[e->current_step].note != e->current_note) {
+  if (e->steps[e->current_step].enabled &&
+      e->steps[e->current_step].note != e->current_note) {
     e->current_note = e->steps[e->current_step].note;
     freq = NOTE_FREQUENCIES[e->current_note];
     e->phase_inc = (uint32_t)(freq * (4294967296.0f / SAMPLE_RATE));
@@ -119,7 +133,7 @@ static sample_t next_sample(Engine *e) {
   sample = oscillator(e->wave, e->phase_acc);
   e->phase_acc += e->phase_inc;
 
-  sample = filter_process(&e->filter, sample);
+  sample = filter_process(&e->filter, (sample_t)(sample * e->ramp));
   return sample;
 }
 
