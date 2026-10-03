@@ -20,11 +20,15 @@
 #define REG_HEADPHONE_VOL_B 0x23
 
 static uint8_t volume_to_reg(uint8_t percent) {
-  uint32_t v = ((uint32_t)percent * 255U) / 100U;
-  if (v > 0xE6U) {
-    return (uint8_t)(v - 0xE7U);
+  uint32_t reg;
+  if (percent == 0U) {
+    return 25U;
   }
-  return (uint8_t)(v + 0x19U);
+  reg = 136U + (6U * (uint32_t)percent) / 5U;
+  if (reg > 255U) {
+    reg = 255U;
+  }
+  return (uint8_t)reg;
 }
 
 uint8_t codec_volume_reg(void) { return volume_to_reg(CS43L22_VOLUME); }

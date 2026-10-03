@@ -26,6 +26,7 @@ void i2s_dma_config(sample_t *buf, uint32_t len) {
                      DMA_SxCR_PSIZE_0 | DMA_SxCR_MINC | DMA_SxCR_CIRC |
                      DMA_SxCR_DIR_0 | DMA_SxCR_HTIE | DMA_SxCR_TCIE;
   NVIC_EnableIRQ(DMA1_Stream7_IRQn);
+  NVIC_SetPriority(DMA1_Stream7_IRQn, 1);
 }
 void i2s_dma_start(void) { DMA1_Stream7->CR |= DMA_SxCR_EN; }
 void DMA1_Stream7_IRQHandler(void) {

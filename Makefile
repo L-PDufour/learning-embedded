@@ -14,11 +14,15 @@ CC_ARM = arm-none-eabi-gcc
 CPU_FLAGS = -mcpu=cortex-m4 -mthumb
 FPU_FLAGS = -mfpu=fpv4-sp-d16 -mfloat-abi=hard
 ARM_CFLAGS = -c -g -O2 $(CPU_FLAGS) $(FPU_FLAGS) -DSTM32F411xE -fno-builtin \
+             -ffunction-sections -fdata-sections \
              -Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include \
              -Ichip_headers/CMSIS/Include
+
 ARM_LDFLAGS = $(CPU_FLAGS) $(FPU_FLAGS) -nostdlib \
               -T stm32_ls.ld \
+              -Wl,--gc-sections \
               -Wl,-Map=synth.map
+
 ARM_LIBS = -lm -lc -lnosys -lgcc
 ARM_SRCS = stm32f411_startup.c main.c src/platform_stm.c src/systick.c \
 	   src/gpio.c src/i2c.c src/codec.c src/i2s.c engine/engine.c src/i2s_dma.c

@@ -113,8 +113,7 @@ static sample_t next_sample(Engine *e) {
   if (e->steps[e->current_step].note != e->current_note) {
     e->current_note = e->steps[e->current_step].note;
     freq = NOTE_FREQUENCIES[e->current_note];
-    e->phase_acc = 0;
-    e->phase_inc = (uint32_t)(freq * (4294967296.0 / SAMPLE_RATE));
+    e->phase_inc = (uint32_t)(freq * (4294967296.0f / SAMPLE_RATE));
   }
 
   sample = oscillator(e->wave, e->phase_acc);

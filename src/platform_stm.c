@@ -15,7 +15,7 @@
 
 static Engine e;
 static const MusicNote song[STEPS] = {NOTE_C4, NOTE_E4, NOTE_G4, NOTE_A4,
-                                      NOTE_G4, NOTE_E4, NOTE_D4, NOTE_REST};
+                                      NOTE_G4, NOTE_E4, NOTE_D4, NOTE_G4};
 static sample_t stereo_buf[TOTAL_FRAMES * 2];
 static sample_t mono_buf[FRAMES_PER_HALF];
 

@@ -23,9 +23,9 @@ SECTIONS
 	.text :
 	{
 	  . = ALIGN(4);
-	  *(.isr_vector_tbl)  /*merge all .isr_vector_tbl sections of input files*/
-	  *(.text)             /*merge all .text sections of input files*/
-	  *(.rodata)           /*merge all .rodata sections of input files*/
+	  KEEP(*(.isr_vector_tbl))  /*merge all .isr_vector_tbl sections of input files*/
+	  *(.text*)             /*merge all .text sections of input files*/
+	  *(.rodata*)           /*merge all .rodata sections of input files*/
 	  . = ALIGN(4);
 	 _etext = .;          /*Create a global symbol to hold end of text section*/
 	}>FLASH
@@ -37,7 +37,7 @@ SECTIONS
 	{
 	 . = ALIGN(4);
 	_sdata = .;   /*Create a global symbol to hold start of data section*/
-	  *(.data)
+	  *(.data*)
 	 . = ALIGN(4);
 	_edata = .;   /*Create a global symbol to hold end of data section*/
 	} > SRAM AT> FLASH  /*>(vma) AT> (lma)*/
@@ -48,7 +48,7 @@ SECTIONS
 	{
 	 . = ALIGN(4);
 	_sbss = .;  /*Create a global symbol to hold start of bss section*/
-	*(.bss)  /*merge all .bss sections of input files*/
+	*(.bss*)  /*merge all .bss sections of input files*/
 	 . = ALIGN(4);
 	_ebss = .;  /*Create a global symbol to hold end of bss section*/
 	}> SRAM
