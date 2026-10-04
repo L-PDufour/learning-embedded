@@ -6,7 +6,14 @@
 
 #define MAX_RAMP 256
 
-static Filter filter_init() {
+static const float wave_gain[4] = {
+    0.40f, /* WAVE_SQUARE:   many odd harmonics -> reads loudest */
+    0.50f, /* WAVE_SAW:      full harmonic stack        */
+    0.70f, /* WAVE_TRIANGLE: fewer harmonics            */
+    1.25f  /* WAVE_SINE:     single tone, reference     */
+};
+
+static Filter filter_init(void) {
   Filter filter;
 
   filter.filter_state = 0;
@@ -22,7 +29,7 @@ void filter_set_cutoff(Filter *f, float cutoff) {
   f->filter_p = (1 - 2 * cutoff / SAMPLE_RATE) * (1 - 2 * cutoff / SAMPLE_RATE);
 }
 
-Engine engine_init() {
+Engine engine_init(void) {
   Engine engine;
   engine.bpm = 120;
   engine.num_steps = 0;
@@ -91,7 +98,7 @@ static sample_t oscillator(WaveType wave, uint32_t phase) {
     sample = 0;
     break;
   }
-  return sample;
+  return (sample_t)(sample * wave_gain[wave]);
 }
 
 static sample_t next_sample(Engine *e) {

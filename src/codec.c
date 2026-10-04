@@ -77,13 +77,13 @@ I2cStatus codec_init(void) {
   s = wr(REG_LIMIT_CTL1, 0x00);
   if (s != I2C_OK)
     return s; /* limiter off */
-  s = wr(REG_TONE_CTL, 0x0F);
+  s = wr(REG_TONE_CTL, 0x88);
   if (s != I2C_OK)
     return s;
-  s = wr(REG_PCMA_VOL, 0x0A);
+  s = wr(REG_PCMA_VOL, 0x00);
   if (s != I2C_OK)
     return s;
-  s = wr(REG_PCMB_VOL, 0x0A);
+  s = wr(REG_PCMB_VOL, 0x00);
   if (s != I2C_OK)
     return s;
 

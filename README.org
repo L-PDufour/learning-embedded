@@ -6,16 +6,16 @@
 
 * Overview
 
-A bare-metal software synthesizer running on the STM32F411E-DISCOVERY, built
-with a clean layered architecture targeting multiple platforms from the same
-C99 engine. Designed to be fun for a kid.
+A bare-metal software synthesizer running on the STM32F411E-DISCOVERY.
+Designed to be fun for a kid.
 
 Status: October 2026. The codec is fully brought up and audio is live on
 hardware: reset, the I2C control bus, the chip-ID read, the CS43L22 init, the
 I2S3 data path, circular DMA, and a half-transfer/transfer-complete ping-pong
-interrupt that streams the real engine as stereo. The engine now runs in real
-time on the MCU (full 8-step pentatonic melody, 2 KB DMA buffer). Host-side MVP
-work (Phase 2) is still pending.
+interrupt that streams the real engine as stereo. The engine runs in real time
+on the MCU (full 8-step pentatonic melody, 2 KB DMA buffer). Host-side MVP work
+(Phase 2) is still pending. The V1 control surface (8 pads + rotary encoder + 3
+pots + SSD1306 OLED) is designed but not yet built; see "Controls (V1)".
 
 * Goals
 
@@ -23,6 +23,145 @@ work (Phase 2) is still pending.
 - Clean architecture separating engine from hardware
 - Multi-platform from same codebase
 - Fun for kids to use
+
+* AI Use & Authorship
+
+This project was built with an AI coding agent used as a tutor and
+pair-programmer. The owner is a web developer on their first embedded program,
+and the agent's role was to explain the embedded concepts (registers,
+peripherals, toolchain, build flow), review code, diagnose bugs, and draft
+documentation - not to write code silently.
+
+- Code is mostly owner-written: the project runs in "tutor mode", where the
+  agent explains and the owner types. Some changes were applied by the agent
+  (a few bug fixes, and much of this README and the teaching ledger); each such
+  case is noted in the session history in =TEACHING.org=.
+- The agent provided research and debugging help: decoding datasheet register
+  tables (e.g. the CS43L22 gain registers), reading the linker map to find what
+  pulls library code in, and the ST-Link/OpenOCD debugging recipe.
+- =TEACHING.org= is the durable ledger of what was tutored, what was verified,
+  and who wrote what, so the exact split is on record.
+
+* Roadmap (V1 = the final product)
+
+The MVP is the final product: a playable, kid-friendly step-sequencer synth.
+High-level milestones and a low-level task map follow; the =TODO List= holds the
+per-task detail.
+
+** High level
+
+1. *DONE - Make it sound.* Codec, I2S, DMA and the engine live on hardware.
+2. *NOW - Make it playable.* Build the V1 control surface (Phase 6).
+3. *THEN - Make it nice.* Filter types, retro sound, boot pattern, volume cap.
+4. *FINISH - Make it real.* Enclosure / faceplate, labels, demo.
+
+** Low level (remaining)
+
+| Area     | Task                                               | Status |
+|----------+----------------------------------------------------+--------|
+| Engine   | =engine_set_step_note= / =engine_toggle_step=       | TODO   |
+| Engine   | =FILTER_HIGH_PASS= / =FILTER_NONE= + audition mode  | TODO   |
+| Engine   | cut =platform_cli.c= to 8 pentatonic steps          | TODO   |
+| Platform | runtime =codec_set_volume()=                        | TODO   |
+| Platform | add =ssd1306.c= to =ARM_SRCS= + fix driver          | TODO   |
+| Controls | ADC pots, rotary encoder, pad scan                  | TODO   |
+| Controls | PLAY/EDIT state machine + live audition             | TODO   |
+| Controls | wave / filter cycle buttons                         | TODO   |
+| Polish   | boot pattern + volume safety cap                    | TODO   |
+| Polish   | 3D-printed faceplate, labels, demo                  | TODO   |
+
+The ordered, verifiable steps are in =V1 Build Plan (step-by-step)= below.
+
+* V1 Build Plan (step-by-step)
+
+Work top to bottom; every step ends in an observable check so you always know
+you are unstuck. Host steps (A) need no hardware. Keep the engine platform-free
+(no stdio, no STM32 headers). Match the existing style: top-of-block declarations
+and =/* */= comments. Every change must keep both =make cli= and =make= green
+under =-Werror=.
+
+** Work loop
+
+- Host: =make cli && ./synth | aplay -f S16_LE -r 48000 -c 1=
+- Hardware: =make && make flash= (board on USB ST-LINK). Debug with OpenOCD in one
+  terminal and =arm-none-eabi-gdb synth.elf= + =target extended-remote :3333= in
+  another. When dumping live state, vary the halt delay so it never lands on the
+  same loop phase twice (a fixed =sleep= can read all-zeros on the =NOTE_REST=
+  step).
+
+** A. Engine API + filter types + audition (host)
+
+1. =engine_set_step_note(e, step, note)= in =engine/engine.c=, declared in
+   =Inc/engine.h=. Bounds-check =step=, set =steps[step].note= and
+   =steps[step].enabled = (note != NOTE_REST)=.
+2. =engine_toggle_step(e, step)= - flip =enabled= (bounds-checked).
+3. =engine_get_step(e, step)= - return the =Step= (for the OLED).
+4. Extend =FilterType= with =FILTER_HIGH_PASS= and =FILTER_NONE=. In
+   =filter_process=: =HIGH_PASS= returns =sample - lp= (run the same one-pole LP,
+   subtract); =NONE= returns the input unchanged.
+5. =engine_set_cutoff(e, hz)= - thin wrapper over =filter_set_cutoff=.
+6. Audition: add =uint8_t audition;= and =MusicNote audition_note;= to =Engine=.
+   In =next_sample=, when =audition= is set, skip the step-advance block and drive
+   =phase_inc=/=ramp= from =audition_note= (a rest = silence).
+- *Verify:* =make cli= stays green and =./synth= still plays the same melody.
+  Optionally drive the new setters from =platform_cli.c= to hear a change live.
+
+** B. OLED bring-up (hardware)
+
+1. Add =src/ssd1306.c= to =ARM_SRCS= in the Makefile.
+2. Fix two driver bugs in =src/ssd1306.c=:
+   - =ssd1306_data()= writes =len-1= bytes from =data+1= (drops byte 0) -> write
+     =len= bytes from =data=.
+   - =ssd1306_update()= sends column-set =0x10= twice -> first must be =0x00=.
+3. In =platform_stm.c=, after =i2c1_init()=, call =ssd1306_init()=, then
+   =ssd1306_draw_string(0, 0, "hello")= + =ssd1306_update()=.
+- *Verify:* "hello" appears and the codec chip-ID read still succeeds (shared
+  I2C1 bus: =0x3C= vs =0x4A=). Blank screen = wrong address jumper (some are
+  =0x3D=).
+
+** C. One pot -> live value on OLED (hardware)
+
+1. Enable ADC1 on PA1; polled single conversion in the main loop.
+2. Average a few samples, map 0-4095 to 40-240, show the number on the OLED.
+3. Add slew/deadband so a noisy pot does not flicker the display.
+- *Verify:* turn the pot, watch the value track on the OLED.
+
+** D. Pads + encoder -> step / note on OLED (hardware)
+
+1. Configure the 8 pad pins as inputs with pull-ups; scan + debounce (N stable
+   samples), detect press/release edges.
+2. Encoder on PB4/PB5: poll quadrature (or TIM3 encoder mode); a detent = one
+   step through ={REST, C4, D4, E4, G4, A4, C5, D5, E5, G5, A5}=.
+3. A pad press selects a step; show selected step + note on the OLED.
+- *Verify:* each pad changes the step number; the encoder steps the note name.
+
+** E. PLAY/EDIT state machine + audition (hardware)
+
+1. Pad press -> set =e->audition=1= and =audition_note= to that step's note;
+   release -> =audition=0=. The sequence pauses while held (audio keeps streaming).
+2. The encoder calls =engine_set_step_note= and updates =audition_note=, so you
+   hear the note change live.
+3. OLED shows =PLAY= vs =EDIT=, selected step, note, and the 8-step pattern.
+4. RT safety: the UI writes =Engine= while the DMA ISR reads it; wrap multi-field
+   updates in a =PRIMASK= critical section.
+- *Verify:* hold a pad -> loop pauses and the note sustains; turn the encoder ->
+   pitch changes live; release -> loop resumes.
+
+** F. Wave/filter cycle + volume (hardware)
+
+1. Wave button: =engine_set_wave(e, (e->wave+1) % 4)=. Filter button: cycle
+   =LOW_PASS -> HIGH_PASS -> NONE=.
+2. Add =codec_set_volume(percent)= in =src/codec.c= (reuse =volume_to_reg=);
+   write =MASTER_A/B_VOL=. Wire the volume pot to it.
+3. Cutoff pot -> =engine_set_cutoff=; tempo pot -> =engine_set_bpm=.
+4. Map pots: tempo 40-240, cutoff ~200-12000 Hz (log), volume 0-cap (80).
+- *Verify:* each control changes its value on the OLED and is audible.
+
+** G. Polish
+
+1. Default boot pattern (so it makes sound on power-up).
+2. Volume safety cap (e.g. 80).
+3. Faceplate / case + labels; final demo.
 
 * Board Change (April -> August 2026)
 
@@ -70,7 +209,7 @@ in musical concepts, never in pins, registers or voltages.
 
 *** Engine (pure C99, zero platform deps)
 - Oscillator
-- Envelope (not yet written)
+- Envelope (attack/release ramp; full ADSR deferred)
 - Filter
 - Step Sequencer
 - Knows nothing about STM32, miniaudio, or any platform
@@ -103,11 +242,11 @@ They fail independently, so they get tested independently.
 
 * Targets
 
-| Target  | Audio Out             | Input        | Status      |
-|---------+-----------------------+--------------+-------------|
-| Desktop | stdout pipe to aplay  | hardcoded    | Working     |
-| STM32   | I2S + CS43L22 codec   | GPIO buttons | Not started |
-| WASM    | Browser audio         | Browser      | Later       |
+| Target  | Audio Out             | Input                             | Status   |
+|---------+-----------------------+-----------------------------------+----------|
+| Desktop | stdout pipe to aplay  | hardcoded                         | Working  |
+| STM32   | I2S + CS43L22 codec   | 8 pads + encoder + pots + OLED    | Designed |
+| WASM    | Browser audio         | Browser                           | Later    |
 
 * Toolchain
 
@@ -130,30 +269,62 @@ They fail independently, so they get tested independently.
 - Each step has an on/off state and an assigned note
 - Loops continuously
 
-Note: =platform_cli.c= currently hardcodes 32 steps of Fur Elise. That was
-useful for validating engine math; it contradicts the stated MVP scope and
-should be cut down to 8 pentatonic steps.
+Note: =platform_cli.c= currently hardcodes a 5-note pentatonic loop; Phase 2
+replaces it with the 8-step MVP pattern.
 
 ** Why Pentatonic
 Almost any combination of notes sounds musical. A 7 year old cannot make it
 sound bad. Perfect for a child bashing buttons enthusiastically.
 
-** Controls (breadboard, later)
-- 1 button cycles the active step (LED shows which)
-- 1 button toggles the active step on/off
-- 1 potentiometer changes the note of the active step
-- 1 button changes tempo
+** Controls (V1, planned)
 
-** Breadboard Layout
+Two states only:
 
-| Component     | Quantity | Purpose                    |
-|---------------+----------+----------------------------|
-| Push buttons  |        3 | Step select, toggle, tempo |
-| LEDs          |        4 | Active step / state        |
-| Potentiometer |        1 | Note of active step        |
+- *PLAY* - the 8-step loop runs; the display shows the current step and pattern.
+- *EDIT* - momentary: press-and-hold a pad to pause the loop and audition that
+  step; release the pad to resume.
 
-The board already has four user LEDs (LD3-LD6) and a user push-button, so the
-first breadboard pass may be smaller than this table suggests.
+| Control       | Physical          | Action                                          |
+|---------------+-------------------+-------------------------------------------------|
+| 8 pads        | buttons (hold)    | hold -> EDIT that step; release -> PLAY         |
+| Note          | rotary encoder    | selected step's note, =NOTE_REST=..pentatonic   |
+| Tempo         | potentiometer     | 40-240 BPM                                      |
+| Filter cutoff | potentiometer     | ~200 Hz - 12 kHz                                |
+| Volume        | potentiometer     | codec master, hard-capped for safety            |
+| Wave          | button            | cycle =(wave+1) % 4=                            |
+| Filter        | button            | cycle =LP -> HP -> Bypass= (=type+1) % 3=       |
+| Display       | SSD1306 OLED, I2C | state, values, 8-step pattern                   |
+
+The note control folds step on/off into pitch: the bottom of its range is
+=NOTE_REST=, matching the engine rule =enabled = note != REST=, so there is no
+separate on/off control.
+
+Filter select extends the engine =FilterType= from =LOW_PASS= to =LOW_PASS= /
+=HIGH_PASS= / =NONE= (bypass). =filter_process= derives the high-pass as
+=hp = x - lp=.
+
+** Bill of Materials (V1)
+
+| Part                                            | Qty | Purpose                       |
+|-------------------------------------------------+-----+-------------------------------|
+| SSD1306 128x64 OLED, I2C, 0.96", 4-pin (=0x3C=) | 1   | display                       |
+| Rotary encoder EC11, detented, push-switch      | 1   | note (push = play/stop later) |
+| Potentiometer 10 kOhm linear                    | 3   | tempo, cutoff, volume         |
+| Knobs (1 D-shaft + 3 pot)                       | 4   |                               |
+| Tactile buttons 6x6 mm (24 mm arcade later)     | 10  | 8 pads + wave + filter        |
+| Breadboard + jumpers + female headers           | 1   | prototype                     |
+| 74HC165 shift register (DIP)                    | 2   | future input expansion        |
+| Proto-shield / perfboard + enclosure            | 1   | V1 permanence (3D-print panel)|
+
+*Board decision:* keep the STM32F411E-DISCOVERY. This is a one-off, expandable
+build, and the on-board CS43L22 + 3.5 mm jack do the audio work a bare F411
+cannot (no internal DAC). The platform layer is isolated, so shrinking to a
+custom board later only rewrites =platform_stm.c= and the drivers, never the
+engine.
+
+Candidate pin map (verify against UM1842 before wiring): pots PA1/PA2/PA3
+(ADC1), encoder PB4/PB5 (TIM3 encoder mode), wave/filter buttons PB0/PB1, pads
+PB7/PB8/PB10/PB12/PB13/PB14/PB15/PC0, OLED + codec on I2C1 PB6/PB9.
 
 * Engine API
 
@@ -164,15 +335,9 @@ toggle_step(step)
 set_tempo(bpm)
 #+END_EXAMPLE
 
-*** Blocker on this API
-
-=Engine.steps[]= currently stores *raw frequencies*, computed at set time via
-=NOTE_FREQUENCIES[n[i]]=. Note identity and on/off state are both discarded,
-so =set_step_note= and =toggle_step= cannot be implemented against the current
-data model.
-
-Steps must store note index + enabled flag, with frequency looked up during
-playback. This needs fixing before any button layer is built on top.
+=Engine.steps[]= already stores ={note, enabled}= (see =Inc/engine.h=), so the
+data model is ready. Only the mutators remain: =engine_set_step_note= and
+=engine_toggle_step= (build plan step A). =engine_set_bpm= covers tempo.
 
 ** Output side (samples out)
 #+BEGIN_EXAMPLE
@@ -183,76 +348,6 @@ get_next_sample()     <- convenience wrapper over the above
 The current =platform_audio_write(sample_t)= is one sample per call. That is
 fine for a stdout pipe and unusable for DMA. The block form is the real
 interface.
-
-* Known Bugs
-
-Found on review, August 2026. All host-side, all testable with =make cli=.
-
-** FIXED Waveform cases swapped
-=WAVE_SAW= computed =sinf()=; =WAVE_SINE= computed a linear ramp. Since
-=engine_init()= sets =WAVE_SINE=, default output was a sawtooth. Swapped back
-in the working tree (Aug 2026).
-
-** BUG Rests are not silent
-=NOTE_FREQUENCIES[0]= is now 0, but the engine still compares *raw frequency*,
-not note index. Fix comes with the steps restructure: compare =NOTE_REST= / an
-enabled flag, never the frequency value.
-
-** BUG Return type mismatch between header and definition
-=engine.h= declares =int16_t engine_next_sample()=; =engine.c= defines
-=sample_t engine_next_sample()=. Identical on desktop, hard compile error the
-moment =PLATFORM_STM32= is defined.
-
-Best fix is to delete the =PLATFORM_STM32= sample-type split entirely - it
-exists to serve a 12-bit unsigned internal DAC that this board does not have.
-The CS43L22 takes signed 16-bit, same as the CLI path. Both platforms become
-=int16_t= / 32767, and desktop output becomes bit-identical to hardware
-output, which makes debugging far easier.
-
-** BUG No phase reset on note change
-=current_cycle = sample_idx % period= derives phase from the global sample
-counter. When =period= changes at a step boundary the phase jumps mid-
-waveform - a step discontinuity, i.e. an audible click on every step. Needs a
-per-note phase accumulator.
-
-** BUG Integer period quantisation
-=period = SAMPLE_RATE / freq= truncates. A4 lands on 441 Hz instead of 440
-(fine); B7 lands on 4410 Hz instead of 3951 (badly out of tune). A fractional
-phase increment fixes both this and the item above.
-
-** DONE Step subdivision decided
-Steps are 16ths: =samples_per_step = SAMPLE_RATE * 60 / (bpm * 4)=. At 120 BPM
-an 8-step loop lasts 1 second.
-
-* Build Hygiene
-
-** DONE Multi-target Makefile (Aug 2026)
-One compiler per target: =CC_ARM= (firmware, =synth.elf=), =CC_CLI= (desktop,
-=synth=), =CC_WASM= reserved for later (stub target). Plain =make= is the ARM
-build; =make cli= is the dev loop.
-
-** BUG Engine is not compiled into firmware
-=ARM_SRCS = $(wildcard src/*.c) $(wildcard *.c)= does not include =engine/=. The
-ARM build has never contained the synth. Only the host =cli= target compiles it.
-
-** BUG Wrong chip define
-=-DSTM32F446xx= against an F411 startup file and F411 linker script.
-
-** BUG Wrong OpenOCD config
-=flash:= target uses =board/st_nucleo_f4.cfg=. Needs the F411 discovery config.
-
-** TODO FPU is off
-=-mcpu=cortex-m4= with no =-mfpu=fpv4-sp-d16 -mfloat-abi=hard=. The filter
-uses floats, so it is currently running soft-float on a chip with an FPU.
-
-** TODO Course exercises are compiled into every build
-=src/= holds =adc.c=, =adc_dma.c=, =dma.c=, =uart_dma.c=, =rtc.c=, =tim.c=,
-=systick.c=, =ssd1306.c= - learning-course scaffolding, swept in by the
-wildcard and compiled with the wrong chip define. Decide: move to an
-=exercises/= folder outside the build, or delete.
-
-Worth keeping regardless: =i2c.c= and =systick.c= are both directly useful
-for codec bring-up.
 
 * Assets Already In Hand
 
@@ -271,22 +366,6 @@ PB8 the OLED driver assumed. =src/i2c.c= now configures the pins from a
 descriptor and exposes a single-byte write. It still hardcodes
 =I2C1->CR2 = 16= (16 MHz PCLK1); raising the system clock later would silently
 break the I2C timing, so revisit that when the clock tree changes.
-
-* Development Strategy
-
-** Progression
-1. Fix engine bugs, validate on desktop
-2. Cut CLI down to 8-step pentatonic MVP
-3. Restructure steps to note + on/off
-4. Codec bring-up on hardware  <- *current phase*
-5. Port engine to STM32 behind =fill_buffer=
-6. Add buttons and potentiometer on breadboard
-7. Polish, document, demo
-
-** Guiding rule for this phase
-Everything in phase 1-3 is host-side and needs no hardware. Get the engine
-provably correct first, so that when the codec fights back there is only one
-unknown instead of two.
 
 * TODO List
 
@@ -320,19 +399,18 @@ accumulator already removes most click artifacts.
 
 ** Phase 2 - MVP scope
 
-*** TODO Cut =platform_cli.c= from 32-step Fur Elise to 8 pentatonic steps
-*** TODO Restructure =Engine.steps[]= to note index + enabled flag
-*** TODO Implement =set_step_note=, =toggle_step=, =set_tempo=
-*** TODO Change platform interface to =fill_buffer(buf, n)=
-    One-sample-at-a-time cannot feed DMA. Do this before touching hardware.
+*** TODO Cut =platform_cli.c= to the 8-step pentatonic MVP pattern
+*** DONE Restructure =Engine.steps[]= to note index + enabled flag
+*** TODO Implement =set_step_note=, =toggle_step= (=set_tempo= = =set_bpm=)
+*** DONE Change platform interface to =fill_buffer(buf, n)=
 
 ** Phase 3 - Build hygiene
 
-*** TODO Add =engine/= to =ARM_SRCS=
-*** TODO =-DSTM32F446xx= -> F411
-*** TODO Point =flash:= at the F411 discovery OpenOCD config
-*** TODO Enable the FPU in CFLAGS
-*** TODO Move or delete the course exercise files
+*** DONE Add =engine/= to =ARM_SRCS=
+*** DONE =-DSTM32F446xx= -> F411
+*** DONE Point =flash:= at the F411 discovery OpenOCD config
+*** DONE Enable the FPU in CFLAGS
+*** DONE Course exercise files no longer compiled (explicit =ARM_SRCS=)
 *** DONE Split the Makefile so each target has its own compiler and wildcard
 
 ** Phase 4 - Codec bring-up (hardware)
@@ -382,6 +460,9 @@ CLOSED: [2026-10-01 Thu]
 
 ** Phase 5 - Sound design (after audible)
 
+*** TODO Add =FILTER_HIGH_PASS= / =FILTER_NONE= + audition mode
+    Needed by the V1 "Filter" button (LP/HP/Bypass) and pad-held EDIT. See the
+    V1 build plan, steps A and F.
 *** TODO Add a clean/crushed flag
     Shared oscillators, shared output path. Retro mode = mask low bits, hold
     samples, bypass filter. Roughly 30 lines. Lets the choice be made by ear on
@@ -396,10 +477,16 @@ CLOSED: [2026-10-02 Fri]
 
 ** Phase 6 - Controls
 
-*** TODO Implement =platform_on_button=
-*** TODO GPIO vs 74HC165 decision (only after pin budget is known)
-*** TODO Potentiometer via ADC for per-step note
-*** TODO Step indicator on LD3-LD6
+*** DONE Controls + display design (V1)
+CLOSED: [2026-10-04 Sun]
+    Two-state PLAY/EDIT model, 8 pads + rotary encoder + 3 pots + 2 cycle
+    buttons, SSD1306 OLED. See "Controls (V1)" and "Bill of Materials (V1)".
+*** TODO Pad scan + =platform_on_button=
+*** TODO Rotary encoder (note) + 3 pots via ADC
+*** TODO PLAY/EDIT state machine + live audition
+*** TODO SSD1306 OLED integration (add =src/ssd1306.c= to =ARM_SRCS=, fix driver)
+*** TODO Wave/filter cycle buttons + runtime =codec_set_volume=
+*** TODO 74HC165 only if pins run out (8 pads on direct GPIO first)
 
 * Folder Structure
 
@@ -425,9 +512,12 @@ synth/
 #+BEGIN_EXAMPLE
 synth/
 |- engine/engine.c        # everything: osc + filter + sequencer
-|- src/platform_cli.c
-|- src/{i2c,ssd1306,adc,adc_dma,dma,uart_dma,rtc,tim,systick,syscalls}.c
-|- Inc/
+|- engine/sine_table.h    # generated wavetable
+|- src/platform_cli.c     # desktop target
+|- src/platform_stm.c     # STM32 target (DMA ISR, stereo interleave)
+|- src/{i2c,codec,i2s,i2s_dma,gpio,systick}.c
+|- src/{ssd1306,adc,adc_dma,dma,uart,uart_dma,rtc,tim,spi,iwdg,syscalls}.c  # course scaffolding
+|- Inc/                   # shared headers
 |- main.c
 \- Makefile
 #+END_EXAMPLE
@@ -444,214 +534,21 @@ triangle. No platform knowledge whatsoever.
 
 ** Envelope (ADSR)
 State machine in software. Scales oscillator output over time.
-States: attack, decay, sustain, release. *Not yet implemented.*
+States: attack, decay, sustain, release. A linear attack/release ramp exists
+today (=MAX_RAMP=); full ADSR is deferred.
 
 ** Filter
 One-pole low pass, applied per sample. Currently =(1 - 2*fc/fs)^2= as the
-coefficient, cutoff 4000 Hz.
+coefficient, cutoff 4000 Hz. =HIGH_PASS= / =NONE= bypass are planned (build
+plan step A).
 
 ** Step Sequencer
-Array of 4 steps, each with a note and on/off state. Counts samples to advance
+Array of 8 steps, each with a note and on/off state. Counts samples to advance
 steps. Completely divorced from audio output.
 
 * References
 
 - *RM0383* - STM32F411 reference manual (I2S is in the SPI chapter)
 - *UM1842* - 32F411EDISCOVERY user manual, schematic and pinout
-- *CS43L22 datasheet* - Cirrus Logic, register map
-- *STM32CubeF4* - =stm32f4_discovery_audio_codec.c= for the init sequencesd#+TITLE: STM32 Synth Project
-#+AUTHOR: Leon Pierre Dufour
-#+DATE: 2026-04-28
-#+OPTIONS: toc:t
-
-* TODO
-** TODO DAC ditigal to audio
-** TODO Ajouter miniaudio
-** 
-* Overview
-
-A bare-metal software synthesizer running on the STM32F446RE, built with a
-clean layered architecture targeting multiple platforms from the same C99 engine.
-Designed to be fun for a kid.
-
-* Goals
-
-- Small, finishable embedded project
-- Clean architecture separating engine from hardware
-- Multi-platform from same codebase
-- Fun for kids to use
-
-* Architecture
-
-** The Core Principle
-
-#+BEGIN_EXAMPLE
-Hardware Input → Hardware Layer → Software Engine → Hardware Layer → Sound Output
-#+END_EXAMPLE
-
-The software engine is sandwiched between two hardware layers. It speaks only in
-musical concepts, never in pins, registers or voltages.
-
-** Layers
-
-*** Engine (pure C99, zero platform deps)
-- Oscillator
-- Envelope
-- Filter
-- Step Sequencer
-- Knows nothing about STM32, SDL, or any platform
-
-*** Hardware Abstraction (HAL)
-- Abstract interface between engine and platform
-- Just function signatures both sides agree on
-- Engine calls it, platform implements it
-
-*** Platform Layer (one per target)
-- =stm32/= — DAC register write, timer ISR, GPIO reads
-- =desktop/= — miniaudio callback, stdin
-
-* Targets
-
-| Target  | Audio Out          | Input        | Status  |
-|---------+--------------------+--------------+---------|
-| Desktop | stdout pipe aplay  | stdin / CLI  | First   |
-| STM32   | DAC + timer ISR    | GPIO buttons | Second  |
-| WASM    | Browser audio      | Browser      | Later   |
-
-* Toolchain
-
-| Tool       | Choice              | Reason                        |
-|------------+---------------------+-------------------------------|
-| Language   | C99                 | Portable, embedded friendly   |
-| Build      | plain Make          | Suckless, already have it     |
-| Compiler   | GCC                 | Already in Nix flake          |
-| Debugger   | GDB + OpenOCD       | Terminal native               |
-| Flash      | st-flash            | One command, does one thing   |
-| Audio lib  | miniaudio (header)  | Single header, no deps        |
-| Audio out  | stdout pipe aplay   | Most suckless option          |
-
-* Hardware
-
-** STM32F446RE Peripherals Used
-- DAC channel 1 on PA4 (12-bit, 4096 levels)
-- Timer for sample rate interrupt (44100Hz or 22050Hz)
-- GPIO for button inputs
-- ADC for potentiometer input
-
-** No extra chips needed
-The onboard DAC is sufficient. Only external hardware needed:
-- 3.5mm jack or powered speaker
-- Coupling capacitor to block DC offset
-- Breadboard components below
-
-** Breadboard Layout
-Kept minimal for reliability and kid-proofing.
-
-| Component       | Quantity | Purpose                  |
-|-----------------+----------+--------------------------|
-| Push buttons    | 4        | Step toggle              |
-| LEDs            | 4        | Step indicator           |
-| Push buttons    | 2        | Step select, tempo       |
-| Potentiometer   | 1        | Note selection per step  |
-
-* The Sequencer
-
-** Scope
-- 4 steps (breadboard friendly, musically sufficient)
-- Pentatonic scale (no wrong notes, kid friendly)
-- Each step has an on/off state and an assigned note
-- Loops continuously
-
-** Why Pentatonic
-Almost any combination of notes sounds musical. A 7 year old cannot make it
-sound bad. Perfect for a child bashing buttons enthusiastically.
-
-** Controls
-- 4 buttons toggle each step on/off
-- 1 button selects active step to edit
-- 1 potentiometer changes the note of the selected step
-- 1 button changes tempo
-
-* Engine API (conceptual)
-
-The API is the heart of the project. Above it is music, below it is hardware.
-Nothing crosses that line.
-
-** Input side (musical events in)
-#+BEGIN_EXAMPLE
-set_step_note(step, note)
-toggle_step(step)
-set_tempo(bpm)
-note_on(note)
-note_off(note)
-#+END_EXAMPLE
-
-** Output side (samples out)
-#+BEGIN_EXAMPLE
-get_next_sample()   -> called by timer ISR or audio callback
-fill_buffer(buf, n) -> called by DMA or miniaudio
-#+END_EXAMPLE
-
-** Platform mapping
-#+BEGIN_EXAMPLE
-STM32:   timer ISR     → calls engine → writes DAC register
-Desktop: aplay pipe    → calls engine → writes stdout
-WASM:    audio callback → calls engine → fills browser buffer
-#+END_EXAMPLE
-
-* Development Strategy
-
-** Progression
-1. Hardcode a sequence, get sound out of desktop (validate engine math)
-2. Add CLI input: enter sequence then play
-3. Port engine to STM32, thin DAC output layer
-4. Add buttons and potentiometer on breadboard
-5. Polish, document, demo
-
-** CLI flow
-#+BEGIN_EXAMPLE
-$ ./synth
-enter sequence (4 notes 1-5): 1 3 2 4
-playing... (ctrl+c to stop)
-#+END_EXAMPLE
-
-* Folder Structure
-
-#+BEGIN_EXAMPLE
-synth/
-├── engine/          # pure C99, zero platform deps
-│   ├── oscillator.c
-│   ├── envelope.c
-│   ├── filter.c
-│   └── sequencer.c
-│
-├── platform/        # one folder per target
-│   ├── stm32/       # DAC, timers, GPIO
-│   └── desktop/     # miniaudio.h, stdin, aplay pipe
-│
-├── hal/             # abstract interface headers
-│
-├── Inc/             # shared headers
-│
-└── tools/           # scripts, wav dumpers, debug helpers
-#+END_EXAMPLE
-
-* Engine Components
-
-** Oscillator
-Pure math function producing a sample value. Waveforms: sine, saw, square.
-No platform knowledge whatsoever.
-
-** Envelope (ADSR)
-State machine in software. Scales oscillator output over time.
-States: attack, decay, sustain, release.
-
-** Filter
-DSP equation applied per sample before DAC output.
-Start with a simple one-pole low pass filter.
-
-** Step Sequencer
-Array of 4 steps, each with a note and on/off state.
-Timer counts steps, fires note_on/note_off into engine.
-Completely divorced from audio output.
-
+- *CS43L22 datasheet* - Cirrus Logic, register map (DS792F2)
+- *STM32CubeF4* - =stm32f4_discovery_audio_codec.c= for the init sequences
