@@ -79,7 +79,7 @@ void platform_init(void) {
   e = engine_init();
   engine_set_wave(&e, WAVE_SINE);
   engine_set_bpm(&e, BPM);
-  engine_set_steps(&e, STEPS, (MusicNote *)song);
+  engine_set_steps(&e, STEPS, song);
   platform_fill_half(0);
   platform_fill_half(1);
   i2s_dma_config(stereo_buf, TOTAL_FRAMES * 2);

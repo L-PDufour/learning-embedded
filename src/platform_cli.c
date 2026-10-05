@@ -13,10 +13,14 @@ void platform_init(void) {
   int i;
 
   e = engine_init();
-  engine_set_wave(&e, WAVE_SINE);
+  engine_set_wave(&e, WAVE_SQUARE);
   engine_set_bpm(&e, 120);
-  engine_set_steps(&e, 5, (MusicNote *)melody);
-
+  engine_set_steps(&e, 5, melody);
+  engine_set_step_note(&e, 0, NOTE_C4);
+  engine_set_step_note(&e, 1, NOTE_D4);
+  engine_set_step_note(&e, 2, NOTE_E4);
+  engine_set_step_note(&e, 3, NOTE_F4);
+  engine_set_step_note(&e, 4, NOTE_G4);
   while (1) {
     engine_fill_buffer(&e, buf, BLOCK);
     for (i = 0; i < BLOCK; i++) {

@@ -1,10 +1,12 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
+#include "tb.h"
 #include <stdint.h>
 
 typedef int16_t sample_t;
 #define SAMPLE_MAX 32767
+#define ENGINE_STEPS_MAX 8
 
 typedef enum {
   NOTE_REST = 0,
@@ -107,7 +109,7 @@ typedef enum {
   NOTE_COUNT
 } MusicNote;
 
-static const int NOTE_FREQUENCIES[NOTE_COUNT] = {
+static const uint16_t NOTE_FREQUENCIES[NOTE_COUNT] = {
     0,    16,   17,   18,   19,   21,   22,   23,   24,   26,   28,
     29,   31,   33,   35,   37,   39,   41,   44,   46,   49,   52,
     55,   58,   62,   65,   69,   73,   78,   82,   87,   92,   98,
@@ -124,7 +126,13 @@ typedef struct {
   uint8_t enabled;
 } Step;
 
-typedef enum { WAVE_SQUARE, WAVE_SAW, WAVE_TRIANGLE, WAVE_SINE } WaveType;
+typedef enum {
+  WAVE_SQUARE,
+  WAVE_SAW,
+  WAVE_TRIANGLE,
+  WAVE_SINE,
+  WAVE_COUNT
+} WaveType;
 
 typedef enum { FILTER_LOW_PASS } FilterType;
 
@@ -136,11 +144,11 @@ typedef struct filter {
 } Filter;
 
 typedef struct engine {
-  int num_steps;
-  Step steps[32];
-  int bpm;
-  int current_step;
-  int step_sample_count;
+  uint32_t num_steps;
+  Step steps[ENGINE_STEPS_MAX];
+  uint32_t bpm;
+  uint32_t current_step;
+  uint32_t step_sample_count;
   uint32_t phase_acc;
   uint32_t phase_inc;
   float ramp;
@@ -155,9 +163,12 @@ typedef struct engine {
 #define SAMPLE_RATE 48000
 #define AMPLITUDE (SAMPLE_MAX / 2)
 Engine engine_init(void);
-sample_t engine_next_sample(Engine *e);
-void engine_set_bpm(Engine *e, int bpm);
-void engine_set_steps(Engine *e, int maxSteps, MusicNote *n);
-void engine_fill_buffer(Engine *e, sample_t *buf, int n);
-void engine_set_wave(Engine *e, WaveType w);
+sample_t engine_next_sample(Engine *engine);
+void engine_set_bpm(Engine *engine, uint32_t bpm);
+void engine_set_steps(Engine *engine, uint32_t max_steps, const MusicNote *notes);
+MusicNote engine_get_step(const Engine *engine, uint32_t step);
+void engine_fill_buffer(Engine *engine, sample_t *buf, uint32_t n);
+void engine_set_wave(Engine *engine, WaveType wave);
+void engine_set_step_note(Engine *engine, uint32_t step, MusicNote note);
+
 #endif
