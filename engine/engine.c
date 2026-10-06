@@ -48,23 +48,32 @@ Engine engine_init(void) {
   engine.current_note = NOTE_REST;
   engine.wave = WAVE_SQUARE;
   engine.filter = filter_init();
+  engine.editing = 0;
   engine.ramp = 0;
   filter_set_cutoff(&engine.filter, DEFAULT_CUTOFF_HZ);
   return engine;
 }
 
 static int16_t filter_process(Filter *filter, int16_t sample) {
+  float out = sample;
 
   switch (filter->filter) {
   case FILTER_LOW_PASS:
     filter->filter_state = (1 - filter->filter_p) * sample +
                            filter->filter_p * filter->filter_state;
-
+    out = filter->filter_state;
     break;
+  case FILTER_HIGH_PASS:
+    filter->filter_state = (1 - filter->filter_p) * sample +
+                           filter->filter_p * filter->filter_state;
+    out = sample - filter->filter_state;
+    break;
+  case FILTER_NONE:
   default:
+    out = sample;
     break;
   }
-  return (int16_t)filter->filter_state;
+  return (int16_t)out;
 }
 
 void engine_set_steps(Engine *engine, uint32_t max_steps,
@@ -135,43 +144,55 @@ static sample_t oscillator(WaveType wave, uint32_t phase) {
   return (sample_t)(sample * wave_gain[wave]);
 }
 
-static sample_t next_sample(Engine *engine) {
-  TB_ASSERT(engine->num_steps >= 1);
-  TB_ASSERT(engine->current_step < engine->num_steps);
+static void calculate_step(Engine *engine) {
   uint32_t samples_per_step = 0;
-  int16_t sample = 0;
-  uint16_t freq = 0;
-  float target = 0;
-  float step = 0;
-
   samples_per_step =
       (SAMPLE_RATE * SECONDS_PER_MINUTE) / (engine->bpm * STEPS_PER_BEAT);
   engine->step_sample_count++;
+
   if (engine->step_sample_count >= samples_per_step) {
     engine->step_sample_count = 0;
     engine->current_step++;
     if (engine->current_step >= engine->num_steps)
       engine->current_step = 0;
   }
+}
 
-  target = engine->steps[engine->current_step].enabled ? 1.0f : 0.0f;
-  step = 1.0f / MAX_RAMP;
+static void apply_step(Engine *engine, uint32_t step) {
+  MusicNote note = engine->steps[step].note;
+  float target = engine->steps[step].enabled ? 1.0f : 0.0f;
+
+  float ramp_step = 0;
+
+  ramp_step = 1.0f / MAX_RAMP;
+
   if (engine->ramp < target) {
-    engine->ramp += step;
+    engine->ramp += ramp_step;
     if (engine->ramp > target)
       engine->ramp = target;
   } else if (engine->ramp > target) {
-    engine->ramp -= step;
+    engine->ramp -= ramp_step;
     if (engine->ramp < target)
       engine->ramp = target;
   }
 
-  if (engine->steps[engine->current_step].enabled &&
-      engine->steps[engine->current_step].note != engine->current_note) {
-    engine->current_note = engine->steps[engine->current_step].note;
-    freq = NOTE_FREQUENCIES[engine->current_note];
-    engine->phase_inc = (uint32_t)(freq * (PHASE_RANGE / SAMPLE_RATE));
+  if (note != NOTE_REST && note != engine->current_note) {
+    engine->current_note = note;
+    engine->phase_inc =
+        (uint32_t)(NOTE_FREQUENCIES[note] * (PHASE_RANGE / SAMPLE_RATE));
   }
+}
+
+static sample_t next_sample(Engine *engine) {
+  TB_ASSERT(engine->num_steps >= 1);
+  TB_ASSERT(engine->current_step < engine->num_steps);
+
+  int16_t sample = 0;
+
+  if (!engine->editing)
+    calculate_step(engine);
+
+  apply_step(engine, engine->current_step);
 
   sample = oscillator(engine->wave, engine->phase_acc);
   engine->phase_acc += engine->phase_inc;
@@ -192,6 +213,11 @@ void engine_set_step_note(Engine *engine, uint32_t step, MusicNote note) {
 
   /* Postcondition: the write took. */
   TB_ASSERT(engine->steps[step].note == note);
+}
+
+void engine_set_cutoff(Engine *engine, float hz) {
+  TB_ASSERT(engine != 0);
+  filter_set_cutoff(&engine->filter, hz);
 }
 
 void engine_fill_buffer(Engine *engine, sample_t *buf, uint32_t n) {

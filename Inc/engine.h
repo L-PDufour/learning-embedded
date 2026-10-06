@@ -134,7 +134,11 @@ typedef enum {
   WAVE_COUNT
 } WaveType;
 
-typedef enum { FILTER_LOW_PASS } FilterType;
+typedef enum {
+  FILTER_NONE,
+  FILTER_LOW_PASS,
+  FILTER_HIGH_PASS,
+} FilterType;
 
 typedef struct filter {
   float filter_state;
@@ -144,6 +148,7 @@ typedef struct filter {
 } Filter;
 
 typedef struct engine {
+  uint8_t editing;
   uint32_t num_steps;
   Step steps[ENGINE_STEPS_MAX];
   uint32_t bpm;
@@ -165,10 +170,12 @@ typedef struct engine {
 Engine engine_init(void);
 sample_t engine_next_sample(Engine *engine);
 void engine_set_bpm(Engine *engine, uint32_t bpm);
-void engine_set_steps(Engine *engine, uint32_t max_steps, const MusicNote *notes);
+void engine_set_steps(Engine *engine, uint32_t max_steps,
+                      const MusicNote *notes);
 MusicNote engine_get_step(const Engine *engine, uint32_t step);
 void engine_fill_buffer(Engine *engine, sample_t *buf, uint32_t n);
 void engine_set_wave(Engine *engine, WaveType wave);
+void engine_set_cutoff(Engine *engine, float hz);
 void engine_set_step_note(Engine *engine, uint32_t step, MusicNote note);
 
 #endif

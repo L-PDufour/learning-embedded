@@ -94,7 +94,6 @@ under =-Werror=.
 1. =engine_set_step_note(e, step, note)= in =engine/engine.c=, declared in
    =Inc/engine.h=. Bounds-check =step=, set =steps[step].note= and
    =steps[step].enabled = (note != NOTE_REST)=.
-2. =engine_toggle_step(e, step)= - flip =enabled= (bounds-checked).
 3. =engine_get_step(e, step)= - return the =Step= (for the OLED).
 4. Extend =FilterType= with =FILTER_HIGH_PASS= and =FILTER_NONE=. In
    =filter_process=: =HIGH_PASS= returns =sample - lp= (run the same one-pole LP,
