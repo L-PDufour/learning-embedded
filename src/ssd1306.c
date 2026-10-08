@@ -1,5 +1,6 @@
 #include "ssd1306.h"
 #include "i2c.h" // your i2c1_burst_write / i2c1_byte_read header
+#include "systick.h"
 
 /* 128x64 framebuffer: 8 pages of 128 bytes each (1 bit per pixel) */
 static uint8_t fb[SSD1306_HEIGHT / 8][SSD1306_WIDTH];
@@ -7,17 +8,19 @@ static uint8_t fb[SSD1306_HEIGHT / 8][SSD1306_WIDTH];
 /* ---- low-level helpers ------------------------------------------ */
 
 static void ssd1306_cmd(uint8_t cmd) {
-  char buf[1] = {(char)cmd};
+  uint8_t buf[1] = {cmd};
   i2c1_burst_write(SSD1306_ADDR, 0x00, 1, buf);
 }
+
 static void ssd1306_data(uint8_t *data, int len) {
-  i2c1_burst_write(SSD1306_ADDR, 0x40, len - 1, (char *)data + 1);
+  i2c1_burst_write(SSD1306_ADDR, 0x40, len, data);
 }
 
 /* ---- init sequence ---------------------------------------------- */
 
 void ssd1306_init(void) {
   /* Standard SSD1306 128x64 init sequence */
+  systick_msec_delay(100); /* power-on settle (some clones need it) */
   ssd1306_cmd(0xAE); /* display off */
   ssd1306_cmd(0xD5);
   ssd1306_cmd(0x80); /* clock div */
@@ -28,6 +31,7 @@ void ssd1306_init(void) {
   ssd1306_cmd(0x40); /* start line = 0 */
   ssd1306_cmd(0x8D);
   ssd1306_cmd(0x14); /* charge pump ON */
+  systick_msec_delay(100); /* charge pump settle */
   ssd1306_cmd(0x20);
   ssd1306_cmd(0x00); /* horizontal addressing mode */
   ssd1306_cmd(0xA1); /* segment remap */
@@ -69,7 +73,7 @@ void ssd1306_draw_pixel(int x, int y, uint8_t on) {
 void ssd1306_update(void) {
   for (int p = 0; p < 8; p++) {
     ssd1306_cmd(0xB0 + p); /* page address */
-    ssd1306_cmd(0x10);     /* lower column = 0 */
+    ssd1306_cmd(0x00);     /* lower column = 0 */
     ssd1306_cmd(0x10);     /* upper column = 0 */
     ssd1306_data(fb[p], 128);
   }

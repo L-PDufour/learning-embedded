@@ -15,7 +15,8 @@ I2S3 data path, circular DMA, and a half-transfer/transfer-complete ping-pong
 interrupt that streams the real engine as stereo. The engine runs in real time
 on the MCU (full 8-step pentatonic melody, 2 KB DMA buffer). Host-side MVP work
 (Phase 2) is still pending. The V1 control surface (8 pads + rotary encoder + 3
-pots + SSD1306 OLED) is designed but not yet built; see "Controls (V1)".
+pots + SSD1306 OLED) is designed; so far the OLED is up (V1 build step B) and
+the pads/encoder/pots are not; see "Controls (V1)".
 
 * Goals
 
@@ -59,11 +60,11 @@ per-task detail.
 
 | Area     | Task                                               | Status |
 |----------+----------------------------------------------------+--------|
-| Engine   | =engine_set_step_note= / =engine_toggle_step=       | TODO   |
-| Engine   | =FILTER_HIGH_PASS= / =FILTER_NONE= + audition mode  | TODO   |
+| Engine   | =set_step_note= done; =toggle_step= cut            | DONE   |
+| Engine   | =FILTER_HIGH_PASS= / =FILTER_NONE= + audition mode  | DONE   |
 | Engine   | cut =platform_cli.c= to 8 pentatonic steps          | TODO   |
 | Platform | runtime =codec_set_volume()=                        | TODO   |
-| Platform | add =ssd1306.c= to =ARM_SRCS= + fix driver          | TODO   |
+| Platform | add =ssd1306.c= to =ARM_SRCS= + fix driver          | DONE   |
 | Controls | ADC pots, rotary encoder, pad scan                  | TODO   |
 | Controls | PLAY/EDIT state machine + live audition             | TODO   |
 | Controls | wave / filter cycle buttons                         | TODO   |
@@ -89,36 +90,45 @@ under =-Werror=.
   same loop phase twice (a fixed =sleep= can read all-zeros on the =NOTE_REST=
   step).
 
-** A. Engine API + filter types + audition (host)
+** DONE A. Engine API + filter types + audition (host)
 
 1. =engine_set_step_note(e, step, note)= in =engine/engine.c=, declared in
    =Inc/engine.h=. Bounds-check =step=, set =steps[step].note= and
    =steps[step].enabled = (note != NOTE_REST)=.
-3. =engine_get_step(e, step)= - return the =Step= (for the OLED).
-4. Extend =FilterType= with =FILTER_HIGH_PASS= and =FILTER_NONE=. In
-   =filter_process=: =HIGH_PASS= returns =sample - lp= (run the same one-pole LP,
-   subtract); =NONE= returns the input unchanged.
-5. =engine_set_cutoff(e, hz)= - thin wrapper over =filter_set_cutoff=.
-6. Audition: add =uint8_t audition;= and =MusicNote audition_note;= to =Engine=.
-   In =next_sample=, when =audition= is set, skip the step-advance block and drive
-   =phase_inc=/=ramp= from =audition_note= (a rest = silence).
+2. =engine_get_step(e, step)= - return the =Step= (for the OLED).
+3. Extend =FilterType= with =FILTER_HIGH_PASS= and =FILTER_NONE=. In
+   =filter_process=: =HIGH_PASS= returns =sample - lp= (reuse the one-pole LP
+   state, subtract); =NONE= returns the input unchanged.
+4. =engine_set_cutoff(e, hz)= - thin wrapper over =filter_set_cutoff=.
+5. Audition: add =uint8_t editing;= to =Engine=. Split =next_sample= into
+   =calculate_step= (the step clock, gated by =editing=) and =apply_step(step)=,
+   which reads note, =enabled= and frequency from the same =Step= and drives
+   =phase_inc=/=ramp= (a rest = silence). =current_step= is the single pitch
+   source; no separate audition-note field.
 - *Verify:* =make cli= stays green and =./synth= still plays the same melody.
   Optionally drive the new setters from =platform_cli.c= to hear a change live.
 
-** B. OLED bring-up (hardware)
+** DONE B. OLED bring-up (hardware)
 
 1. Add =src/ssd1306.c= to =ARM_SRCS= in the Makefile.
-2. Fix two driver bugs in =src/ssd1306.c=:
-   - =ssd1306_data()= writes =len-1= bytes from =data+1= (drops byte 0) -> write
+2. Fix the driver in =src/ssd1306.c=:
+   - =ssd1306_cmd()=/=ssd1306_data()= passed =char *= to =i2c1_burst_write(...,
+     const uint8_t *)= -> =-Werror=pointer-sign=; use =uint8_t=.
+   - =ssd1306_data()= wrote =len-1= bytes from =data+1= (dropped byte 0) -> write
      =len= bytes from =data=.
-   - =ssd1306_update()= sends column-set =0x10= twice -> first must be =0x00=.
-3. In =platform_stm.c=, after =i2c1_init()=, call =ssd1306_init()=, then
-   =ssd1306_draw_string(0, 0, "hello")= + =ssd1306_update()=.
+   - =ssd1306_update()= sent column-set =0x10= twice -> first must be =0x00=.
+3. Add ~100 ms settle delays in =ssd1306_init()=: one before the sequence
+   (power-on) and one after the charge-pump command (=0x8D, 0x14=).
+4. In =platform_stm.c=, after =i2c1_init()=, call =ssd1306_init()=,
+   =ssd1306_clear()=, =ssd1306_draw_string(0, 0, "hello")=, =ssd1306_update()=.
 - *Verify:* "hello" appears and the codec chip-ID read still succeeds (shared
-  I2C1 bus: =0x3C= vs =0x4A=). Blank screen = wrong address jumper (some are
-  =0x3D=).
+  I2C1 bus: =0x3C= vs =0x4A=; LED = 3 slow blinks).
+- *Debug note:* the blank screen was *not* the address or the wiring - =0x3C=
+  ACKed and every command and 128-byte page write completed. It was **timing**:
+  the charge pump / power-on had not settled before the init burst. Confirmed
+  with the panel's own =0xA5= "entire display ON" self-test (solid screen).
 
-** C. One pot -> live value on OLED (hardware)
+** NEXT C. One pot -> live value on OLED (hardware)
 
 1. Enable ADC1 on PA1; polled single conversion in the main loop.
 2. Average a few samples, map 0-4095 to 40-240, show the number on the OLED.
@@ -277,16 +287,21 @@ sound bad. Perfect for a child bashing buttons enthusiastically.
 
 ** Controls (V1, planned)
 
-Two states only:
+Two transport states, toggled by the encoder push:
 
 - *PLAY* - the 8-step loop runs; the display shows the current step and pattern.
-- *EDIT* - momentary: press-and-hold a pad to pause the loop and audition that
-  step; release the pad to resume.
+  Press-and-hold a pad to momentarily pause on that step and audition it; the
+  encoder edits that step's note; release resumes. (This is the engine's
+  =editing= path.)
+- *STOP* - the loop is halted and the 8 pads become a one-octave major keyboard
+  (=C D E F G A B C=): the same hardware is a monosynth you can play live. One
+  voice only, so there is no layering and you cannot play over the sequence.
 
 | Control       | Physical          | Action                                          |
 |---------------+-------------------+-------------------------------------------------|
-| 8 pads        | buttons (hold)    | hold -> EDIT that step; release -> PLAY         |
-| Note          | rotary encoder    | selected step's note, =NOTE_REST=..pentatonic   |
+| 8 pads        | buttons           | PLAY: hold = edit that step; STOP: play a note  |
+| Note          | rotary encoder    | selected step's note, =NOTE_REST=..major        |
+| Encoder push  | push-switch       | toggle PLAY / STOP                              |
 | Tempo         | potentiometer     | 40-240 BPM                                      |
 | Filter cutoff | potentiometer     | ~200 Hz - 12 kHz                                |
 | Volume        | potentiometer     | codec master, hard-capped for safety            |
@@ -329,14 +344,14 @@ PB7/PB8/PB10/PB12/PB13/PB14/PB15/PC0, OLED + codec on I2C1 PB6/PB9.
 
 ** Input side (musical events in)
 #+BEGIN_EXAMPLE
-set_step_note(step, note)
-toggle_step(step)
+set_step_note(step, note)   <- on/off folded in: note == NOTE_REST disables
 set_tempo(bpm)
 #+END_EXAMPLE
 
-=Engine.steps[]= already stores ={note, enabled}= (see =Inc/engine.h=), so the
-data model is ready. Only the mutators remain: =engine_set_step_note= and
-=engine_toggle_step= (build plan step A). =engine_set_bpm= covers tempo.
+=Engine.steps[]= stores ={note, enabled}= (see =Inc/engine.h=).
+=engine_set_step_note= is implemented and sets =enabled = (note != NOTE_REST)=;
+a separate =toggle_step= is CUT for V1 (on/off folds into the note).
+=engine_set_bpm= covers tempo.
 
 ** Output side (samples out)
 #+BEGIN_EXAMPLE
@@ -400,7 +415,7 @@ accumulator already removes most click artifacts.
 
 *** TODO Cut =platform_cli.c= to the 8-step pentatonic MVP pattern
 *** DONE Restructure =Engine.steps[]= to note index + enabled flag
-*** TODO Implement =set_step_note=, =toggle_step= (=set_tempo= = =set_bpm=)
+*** DONE Implement =set_step_note= (=set_tempo= = =set_bpm=); =toggle_step= CUT
 *** DONE Change platform interface to =fill_buffer(buf, n)=
 
 ** Phase 3 - Build hygiene
@@ -483,7 +498,7 @@ CLOSED: [2026-10-04 Sun]
 *** TODO Pad scan + =platform_on_button=
 *** TODO Rotary encoder (note) + 3 pots via ADC
 *** TODO PLAY/EDIT state machine + live audition
-*** TODO SSD1306 OLED integration (add =src/ssd1306.c= to =ARM_SRCS=, fix driver)
+*** DONE SSD1306 OLED integration (add =src/ssd1306.c= to =ARM_SRCS=, fix driver)
 *** TODO Wave/filter cycle buttons + runtime =codec_set_volume=
 *** TODO 74HC165 only if pins run out (8 pads on direct GPIO first)
 

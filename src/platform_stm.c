@@ -4,6 +4,7 @@
 #include "i2c.h"
 #include "i2s.h"
 #include "platform.h"
+#include "ssd1306.h"
 #include "systick.h"
 
 #define BPM 120
@@ -84,6 +85,10 @@ void platform_init(void) {
   platform_fill_half(1);
   i2s_dma_config(stereo_buf, TOTAL_FRAMES * 2);
   i2c1_init();
+  ssd1306_init();
+  ssd1306_clear();
+  ssd1306_draw_string(0, 0, "hello");
+  ssd1306_update();
   /* Configure the codec, power it on, then prove the write path. */
   status = codec_init();
   if (status == I2C_OK) {
