@@ -1,16 +1,48 @@
 #include "gpio.h"
+#include "stm32f4xx.h"
 #include "systick.h"
 #include <stddef.h>
+#include <stdint.h>
 
-void button_init(void) {
-  RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
-  const uint32_t btn_pins[] = {0, 1, 4, 6, 7, 8, 9, 10};
-  for (size_t i = 0; i < sizeof(btn_pins) / sizeof(btn_pins[0]); i++) {
-    uint32_t p = btn_pins[i];
-    GPIOA->MODER &= ~(3U << (2 * p));
-    GPIOA->PUPDR &= ~(3U << (2 * p));
-    GPIOA->PUPDR |= (1U << (2 * p));
+typedef struct {
+  GPIO_TypeDef *port; /* GPIOB or GPIOC */
+  uint8_t pin;        /* 0..15 */
+} PadPin;
+
+static const PadPin pad_map[PADS_MAX] = {
+    {GPIOB, 7},  {GPIOB, 8},  {GPIOB, 10}, {GPIOB, 12},
+    {GPIOB, 13}, {GPIOB, 14}, {GPIOB, 15}, {GPIOC, 0},
+};
+
+void pad_init(void) {
+  size_t i;
+
+  RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
+  RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
+
+  for (i = 0; i < PADS_MAX; i++) {
+    uint32_t p = pad_map[i].pin;
+    GPIO_TypeDef *port = pad_map[i].port;
+
+    port->MODER &= ~(3U << (2 * p)); /* 00 = input        */
+    port->PUPDR &= ~(3U << (2 * p)); /* clear both bits   */
+    port->PUPDR |= (1U << (2 * p));  /* 01 = pull-up      */
   }
+}
+
+uint8_t pad_read(void) {
+  uint8_t mask = 0;
+  size_t i;
+
+  for (i = 0; i < PADS_MAX; i++) {
+    GPIO_TypeDef *port = pad_map[i].port;
+    uint32_t p = pad_map[i].pin;
+
+    if (((port->IDR >> p) & 1U) == 0U) { /* active-low: 0 = pressed */
+      mask |= (uint8_t)(1U << i);
+    }
+  }
+  return mask;
 }
 
 static void codec_reset(void) {

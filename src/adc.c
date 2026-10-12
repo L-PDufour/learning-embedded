@@ -1,4 +1,5 @@
 #include "adc.h"
+
 #define GPIOAEN (1U << 0)
 #define ADC1EN (1U << 8)
 #define ADC_CH1 (1U << 0)
@@ -7,6 +8,7 @@
 #define CR2_CONT (1U << 1)
 #define CR2_SWSTART (1U << 30)
 #define SR_EOC (1U << 1)
+
 void pa1_adc_init(void) {
   /****Configure the ADC GPIO Pin**/
   /*Enable clock access to GPIOA*/
@@ -22,6 +24,7 @@ void pa1_adc_init(void) {
   /*Set conversion sequence length*/
   ADC1->SQR1 = ADC_SEQ_LEN_1;
   /*Enable ADC module*/
+  ADC1->SMPR2 |= (7U << 3);
   ADC1->CR2 |= CR2_ADCON;
 }
 void start_conversion(void) {

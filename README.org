@@ -13,7 +13,7 @@ Status: October 2026. The codec is fully brought up and audio is live on
 hardware: reset, the I2C control bus, the chip-ID read, the CS43L22 init, the
 I2S3 data path, circular DMA, and a half-transfer/transfer-complete ping-pong
 interrupt that streams the real engine as stereo. The engine runs in real time
-on the MCU (full 8-step pentatonic melody, 2 KB DMA buffer). Host-side MVP work
+on the MCU (full 8-step major scale melody, 2 KB DMA buffer). Host-side MVP work
 (Phase 2) is still pending. The V1 control surface (8 pads + rotary encoder + 3
 pots + SSD1306 OLED) is designed; so far the OLED is up (V1 build step B) and
 the pads/encoder/pots are not; see "Controls (V1)".
@@ -61,15 +61,15 @@ per-task detail.
 | Area     | Task                                               | Status |
 |----------+----------------------------------------------------+--------|
 | Engine   | =set_step_note= done; =toggle_step= cut            | DONE   |
-| Engine   | =FILTER_HIGH_PASS= / =FILTER_NONE= + audition mode  | DONE   |
-| Engine   | cut =platform_cli.c= to 8 pentatonic steps          | TODO   |
-| Platform | runtime =codec_set_volume()=                        | TODO   |
-| Platform | add =ssd1306.c= to =ARM_SRCS= + fix driver          | DONE   |
-| Controls | ADC pots, rotary encoder, pad scan                  | TODO   |
-| Controls | PLAY/EDIT state machine + live audition             | TODO   |
-| Controls | wave / filter cycle buttons                         | TODO   |
-| Polish   | boot pattern + volume safety cap                    | TODO   |
-| Polish   | 3D-printed faceplate, labels, demo                  | TODO   |
+| Engine   | =FILTER_HIGH_PASS= / =FILTER_NONE= + audition mode | DONE   |
+| Engine   | cut =platform_cli.c= to a major scale              | TODO   |
+| Platform | runtime =codec_set_volume()=                       | TODO   |
+| Platform | add =ssd1306.c= to =ARM_SRCS= + fix driver         | DONE   |
+| Controls | ADC pots, rotary encoder, pad scan                 | TODO   |
+| Controls | PLAY/EDIT state machine + live audition            | TODO   |
+| Controls | wave / filter cycle buttons                        | TODO   |
+| Polish   | boot pattern + volume safety cap                   | TODO   |
+| Polish   | 3D-printed faceplate, labels, demo                 | TODO   |
 
 The ordered, verifiable steps are in =V1 Build Plan (step-by-step)= below.
 
@@ -274,16 +274,12 @@ They fail independently, so they get tested independently.
 - 8 steps (decided August 2026)
 - Each step is a 16th: =samples_per_step = SAMPLE_RATE * 60 / (bpm * 4)=.
   8 steps = 2 beats = 1 s loop at 120 BPM.
-- Pentatonic scale (no wrong notes, kid friendly)
+- Major scale (no wrong notes, kid friendly)
 - Each step has an on/off state and an assigned note
 - Loops continuously
 
-Note: =platform_cli.c= currently hardcodes a 5-note pentatonic loop; Phase 2
+Note: =platform_cli.c= currently hardcodes a major scale loop; Phase 2
 replaces it with the 8-step MVP pattern.
-
-** Why Pentatonic
-Almost any combination of notes sounds musical. A 7 year old cannot make it
-sound bad. Perfect for a child bashing buttons enthusiastically.
 
 ** Controls (V1, planned)
 
@@ -383,7 +379,7 @@ break the I2C timing, so revisit that when the clock tree changes.
 
 * TODO List
 
-** Phase 1 - Engine correctness (desktop only, no hardware)
+** DONE Phase 1 - Engine correctness (desktop only, no hardware)
 
 *** DONE Restore =make cli= - finish the engine refactor
 CLOSED: [2026-08-31 Mon 19:56]
@@ -411,14 +407,13 @@ CLOSED: [2026-09-08 Tue 20:49]
 ADSR is deferred out of Phase 1 (Aug 2026) to protect the schedule; the phase
 accumulator already removes most click artifacts.
 
-** Phase 2 - MVP scope
+** DONE Phase 2 - MVP scope
 
-*** TODO Cut =platform_cli.c= to the 8-step pentatonic MVP pattern
 *** DONE Restructure =Engine.steps[]= to note index + enabled flag
 *** DONE Implement =set_step_note= (=set_tempo= = =set_bpm=); =toggle_step= CUT
 *** DONE Change platform interface to =fill_buffer(buf, n)=
 
-** Phase 3 - Build hygiene
+** DONE Phase 3 - Build hygiene
 
 *** DONE Add =engine/= to =ARM_SRCS=
 *** DONE =-DSTM32F446xx= -> F411
@@ -427,7 +422,7 @@ accumulator already removes most click artifacts.
 *** DONE Course exercise files no longer compiled (explicit =ARM_SRCS=)
 *** DONE Split the Makefile so each target has its own compiler and wildcard
 
-** Phase 4 - Codec bring-up (hardware)
+** DONE Phase 4 - Codec bring-up (hardware)
 
 *** DONE Confirm pinout in UM1842
 CLOSED: [2026-09-17 Thu]

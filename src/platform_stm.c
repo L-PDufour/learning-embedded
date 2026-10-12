@@ -1,3 +1,4 @@
+#include "adc.h"
 #include "codec.h"
 #include "engine.h"
 #include "gpio.h"
@@ -6,25 +7,74 @@
 #include "platform.h"
 #include "ssd1306.h"
 #include "systick.h"
+#include "ui.h"
+#include <stdint.h>
 
 #define BPM 120
 #define STEPS 8
+#define DEBOUNCE 5
 #define SAMPLES_PER_STEP (SAMPLE_RATE * 60 / (BPM * 4))
 #define FRAMES_PER_HALF 256
 #define TOTAL_FRAMES (FRAMES_PER_HALF * 2)
 #define HALF_HALFWORDS (FRAMES_PER_HALF * 2)
-
-static Engine e;
-static const MusicNote song[STEPS] = {NOTE_C4, NOTE_REST, NOTE_G4, NOTE_A4,
-                                      NOTE_G4, NOTE_E4,   NOTE_D4, NOTE_REST};
-static sample_t stereo_buf[TOTAL_FRAMES * 2];
-static sample_t mono_buf[FRAMES_PER_HALF];
-
 #define DEMCR (*(volatile uint32_t *)0xE000EDFC)
 #define DWT_CTRL (*(volatile uint32_t *)0xE0001000)
 #define DWT_CYCCNT (*(volatile uint32_t *)0xE0001004)
+
+static sample_t stereo_buf[TOTAL_FRAMES * 2];
+static sample_t mono_buf[FRAMES_PER_HALF];
 volatile uint32_t i2s_isr_last_cycles = 0;
 volatile uint32_t i2s_isr_max_cycles = 0;
+static Engine e;
+static const MusicNote melody[STEPS] = {NOTE_C4, NOTE_D4, NOTE_E4, NOTE_F4,
+                                        NOTE_G4, NOTE_A4, NOTE_B4, NOTE_C5};
+static const MusicNote keys[PADS_MAX] = {NOTE_C4, NOTE_D4, NOTE_E4, NOTE_F4,
+                                         NOTE_G4, NOTE_A4, NOTE_B4, NOTE_C5};
+
+static int highest_pad(uint8_t mask) {
+  int i;
+  for (i = PADS_MAX - 1; i >= 0; i--) {
+    if (mask & (1U << i)) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+static uint8_t poll_pads(void) {
+  static uint8_t raw_prev = 0;
+  static uint8_t stable = 0;
+  static uint8_t count = 0;
+  static int active = -1;
+  uint8_t is_dirty = 0;
+  uint8_t raw = pad_read();
+
+  if (raw != raw_prev) {
+    raw_prev = raw;
+    count = 0;
+  } else if (count < DEBOUNCE) {
+    count++;
+  }
+
+  if (count >= DEBOUNCE && raw != stable) {
+    uint8_t newly = (uint8_t)(raw & ~stable);
+    stable = raw;
+
+    if (newly != 0) { /* a key went down: it wins (last-pressed) */
+      active = highest_pad(newly);
+    } else if (active >= 0 && (stable & (1U << active)) == 0) {
+      active = highest_pad(stable); /* active released: fall back to any held */
+    }
+
+    if (active >= 0) {
+      engine_note_on(&e, keys[active]);
+    } else {
+      engine_note_off(&e);
+    }
+    is_dirty = 1; /* only a debounced note event redraws the screen */
+  }
+  return is_dirty;
+}
 
 /* Blink `count` times, then pause, forever. Used to report the codec
  * probe result with no terminal or debugger attached. */
@@ -65,7 +115,6 @@ void platform_fill_half(int half) {
 void platform_init(void) {
   uint8_t id = 0;
   uint8_t vol = 0;
-
   I2cStatus status;
   I2cStatus clock_status;
 
@@ -78,16 +127,19 @@ void platform_init(void) {
   clock_status = i2s_clock_init();
   i2s3_init();
   e = engine_init();
-  engine_set_wave(&e, WAVE_SINE);
+  engine_set_wave(&e, WAVE_SAW);
   engine_set_bpm(&e, BPM);
-  engine_set_steps(&e, STEPS, song);
+  engine_set_steps(&e, STEPS, melody);
+  pad_init();
+  engine_set_mode(&e, MONO);
   platform_fill_half(0);
   platform_fill_half(1);
   i2s_dma_config(stereo_buf, TOTAL_FRAMES * 2);
   i2c1_init();
+
   ssd1306_init();
   ssd1306_clear();
-  ssd1306_draw_string(0, 0, "hello");
+
   ssd1306_update();
   /* Configure the codec, power it on, then prove the write path. */
   status = codec_init();
@@ -113,6 +165,12 @@ void platform_init(void) {
              vol != codec_volume_reg()) {
     blink_forever(2, 250, 250, 1000); /* bus OK, but values wrong */
   } else {
-    blink_forever(3, 250, 250, 1000); /* success: 3 slow blinks */
+    while (1) {
+      if (poll_pads()) { /* redraw only when a debounced note event occurred */
+        ui_render(&e);
+        ssd1306_update();
+      }
+      systick_msec_delay(1);
+    }
   }
 }

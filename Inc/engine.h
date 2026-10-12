@@ -147,8 +147,14 @@ typedef struct filter {
   FilterType filter;
 } Filter;
 
+typedef enum {
+  STOP,
+  LOOP,
+  EDITING,
+  MONO,
+} Mode;
+
 typedef struct engine {
-  uint8_t editing;
   uint32_t num_steps;
   Step steps[ENGINE_STEPS_MAX];
   uint32_t bpm;
@@ -158,6 +164,9 @@ typedef struct engine {
   uint32_t phase_inc;
   float ramp;
   MusicNote current_note;
+  MusicNote mono_note;
+  float gate;
+  Mode current_mode;
 
   Filter filter;
 
@@ -176,6 +185,10 @@ MusicNote engine_get_step(const Engine *engine, uint32_t step);
 void engine_fill_buffer(Engine *engine, sample_t *buf, uint32_t n);
 void engine_set_wave(Engine *engine, WaveType wave);
 void engine_set_cutoff(Engine *engine, float hz);
+void engine_set_mode(Engine *engine, Mode new_mode);
+void engine_note_on(Engine *engine, MusicNote note);
+void engine_note_off(Engine *engine);
+MusicNote engine_get_note(Engine *engine);
 void engine_set_step_note(Engine *engine, uint32_t step, MusicNote note);
 
 #endif

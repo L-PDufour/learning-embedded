@@ -6,6 +6,8 @@
 #include <stdint.h>
 
 #define MAX_RAMP 256
+#define MODE_COUNT 4
+
 #define DEFAULT_BPM 120U
 #define DEFAULT_CUTOFF_HZ 4000.0f
 #define BPM_MIN 40U
@@ -45,10 +47,13 @@ Engine engine_init(void) {
   engine.current_step = 0;
   engine.step_sample_count = 0;
   engine.phase_acc = 0;
+  engine.phase_inc = 0;
   engine.current_note = NOTE_REST;
+  engine.mono_note = NOTE_REST;
+  engine.current_mode = LOOP;
   engine.wave = WAVE_SQUARE;
   engine.filter = filter_init();
-  engine.editing = 0;
+  engine.gate = 0;
   engine.ramp = 0;
   filter_set_cutoff(&engine.filter, DEFAULT_CUTOFF_HZ);
   return engine;
@@ -158,24 +163,19 @@ static void calculate_step(Engine *engine) {
   }
 }
 
-static void apply_step(Engine *engine, uint32_t step) {
-  MusicNote note = engine->steps[step].note;
-  float target = engine->steps[step].enabled ? 1.0f : 0.0f;
+static void apply_voice(Engine *engine, MusicNote note, float gate) {
 
-  float ramp_step = 0;
+  float ramp_step = 1.0f / MAX_RAMP;
 
-  ramp_step = 1.0f / MAX_RAMP;
-
-  if (engine->ramp < target) {
+  if (engine->ramp < gate) {
     engine->ramp += ramp_step;
-    if (engine->ramp > target)
-      engine->ramp = target;
-  } else if (engine->ramp > target) {
+    if (engine->ramp > gate)
+      engine->ramp = gate;
+  } else if (engine->ramp > gate) {
     engine->ramp -= ramp_step;
-    if (engine->ramp < target)
-      engine->ramp = target;
+    if (engine->ramp < gate)
+      engine->ramp = gate;
   }
-
   if (note != NOTE_REST && note != engine->current_note) {
     engine->current_note = note;
     engine->phase_inc =
@@ -183,25 +183,73 @@ static void apply_step(Engine *engine, uint32_t step) {
   }
 }
 
-static sample_t next_sample(Engine *engine) {
-  TB_ASSERT(engine->num_steps >= 1);
-  TB_ASSERT(engine->current_step < engine->num_steps);
+static sample_t render_sample(Engine *engine) {
+  MusicNote note = 0;
+  float gate = 0;
+  sample_t out;
 
-  int16_t sample = 0;
-
-  if (!engine->editing)
+  switch (engine->current_mode) {
+  case LOOP:
+    TB_ASSERT(engine->num_steps >= 1);
+    TB_ASSERT(engine->current_step < engine->num_steps);
     calculate_step(engine);
+    note = engine->steps[engine->current_step].note;
+    gate = engine->steps[engine->current_step].enabled ? 1.0f : 0.0f;
+    break;
+  case EDITING:
+    TB_ASSERT(engine->num_steps >= 1);
+    TB_ASSERT(engine->current_step < engine->num_steps);
+    note = engine->steps[engine->current_step].note;
+    gate = engine->steps[engine->current_step].enabled ? 1.0f : 0.0f;
+    break;
+  case MONO:
+    note = engine->mono_note;
+    gate = engine->gate;
+    break;
+  case STOP:
+    gate = 0;
+    break;
+  }
 
-  apply_step(engine, engine->current_step);
+  apply_voice(engine, note, gate);
 
-  sample = oscillator(engine->wave, engine->phase_acc);
+  out = filter_process(
+      &engine->filter,
+      (sample_t)(oscillator(engine->wave, engine->phase_acc) * engine->ramp));
   engine->phase_acc += engine->phase_inc;
 
-  sample = filter_process(&engine->filter, (sample_t)(sample * engine->ramp));
-  return sample;
+  return out;
 }
 
-sample_t engine_next_sample(Engine *engine) { return next_sample(engine); }
+sample_t engine_next_sample(Engine *engine) { return render_sample(engine); }
+
+void engine_note_on(Engine *engine, MusicNote new_note) {
+  TB_ASSERT(engine != 0);
+  TB_ASSERT(new_note < NOTE_COUNT);
+  engine->mono_note = new_note;
+  engine->gate = 1.0f;
+}
+
+void engine_note_off(Engine *engine) {
+  TB_ASSERT(engine != 0);
+  engine->gate = 0.0f;
+}
+
+MusicNote engine_get_note(Engine *engine) {
+  TB_ASSERT(engine != 0);
+  if (engine->current_mode == LOOP) {
+    return engine->steps[engine->current_step].note;
+  } else if (engine->current_mode == MONO) {
+    return engine->mono_note;
+  }
+  return NOTE_REST;
+}
+
+void engine_set_mode(Engine *engine, Mode new_mode) {
+  TB_ASSERT(engine != 0);
+  TB_ASSERT(new_mode < MODE_COUNT);
+  engine->current_mode = new_mode;
+}
 
 void engine_set_step_note(Engine *engine, uint32_t step, MusicNote note) {
   TB_ASSERT(engine != 0);
@@ -227,6 +275,6 @@ void engine_fill_buffer(Engine *engine, sample_t *buf, uint32_t n) {
   TB_ASSERT(buf != 0);
 
   for (i = 0; i < n; i++) {
-    buf[i] = next_sample(engine);
+    buf[i] = render_sample(engine);
   }
 }

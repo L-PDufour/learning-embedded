@@ -4,6 +4,9 @@
 
 /* 128x64 framebuffer: 8 pages of 128 bytes each (1 bit per pixel) */
 static uint8_t fb[SSD1306_HEIGHT / 8][SSD1306_WIDTH];
+/* Last bytes actually sent to the panel; ssd1306_update() pushes only pages
+ * that differ, so a one-line change costs one page of I2C instead of eight. */
+static uint8_t shadow[SSD1306_HEIGHT / 8][SSD1306_WIDTH];
 
 /* ---- low-level helpers ------------------------------------------ */
 
@@ -47,6 +50,12 @@ void ssd1306_init(void) {
   ssd1306_cmd(0xA4); /* display from RAM */
   ssd1306_cmd(0xA6); /* normal (not inverted) */
   ssd1306_cmd(0xAF); /* display ON */
+
+  /* Force the first ssd1306_update() to push every page: the panel's GDDRAM
+   * holds undefined data at power-on, so nothing may be assumed equal. */
+  for (int p = 0; p < 8; p++)
+    for (int x = 0; x < 128; x++)
+      shadow[p][x] = 0xFF;
 }
 
 /* ---- framebuffer ops -------------------------------------------- */
@@ -72,10 +81,22 @@ void ssd1306_draw_pixel(int x, int y, uint8_t on) {
 
 void ssd1306_update(void) {
   for (int p = 0; p < 8; p++) {
+    int changed = 0;
+    for (int x = 0; x < 128; x++) {
+      if (fb[p][x] != shadow[p][x]) {
+        changed = 1;
+        break;
+      }
+    }
+    if (!changed)
+      continue; /* nothing on this page moved: skip its I2C burst */
+
     ssd1306_cmd(0xB0 + p); /* page address */
     ssd1306_cmd(0x00);     /* lower column = 0 */
     ssd1306_cmd(0x10);     /* upper column = 0 */
     ssd1306_data(fb[p], 128);
+    for (int x = 0; x < 128; x++)
+      shadow[p][x] = fb[p][x];
   }
 }
 

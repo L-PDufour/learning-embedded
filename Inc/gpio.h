@@ -1,9 +1,13 @@
 #ifndef GPIO_H_
 #define GPIO_H_
-#include "stdbool.h"
-#include "stm32f4xx.h"
-void button_init(void);
-bool get_btn_state(void);
+
+#include <stdint.h>
+
+#define PADS_MAX 8
+
+void pad_init(void);
+uint8_t pad_read(void);
+
 void led_init(void);
 void board_init(void);
 void led_on(void);
