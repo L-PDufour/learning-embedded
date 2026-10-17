@@ -1,32 +1,34 @@
 # STM32 Synth - multi-target build
 #
 # One compiler per target:
-#   make       -> ARM firmware (arm-none-eabi-gcc)
-#   make cli   -> desktop host binary (gcc)           [dev loop]
+#   make       -> ARM firmware (arm-clang)
+#   make cli   -> desktop host binary (clang)         [dev loop]
 #   make wasm  -> browser build (emcc)                [not wired yet]
 #
 # The first target (all) is what plain `make` builds.
 
-CFLAGS_COMMON = -std=c99 -Wall -Wextra -Wpedantic -Werror -I Inc
 
+CC_CLI = clang
+
+CFLAGS_COMMON = -std=c99 -Wall -Wextra -Wpedantic -Werror -I Inc
+CC_ARM = arm-clang --target=thumbv7em-none-eabihf
 # ---- ARM firmware ----
-CC_ARM = arm-none-eabi-gcc
 CPU_FLAGS = -mcpu=cortex-m4 -mthumb
 FPU_FLAGS = -mfpu=fpv4-sp-d16 -mfloat-abi=hard
+ARM_LDFLAGS = $(CPU_FLAGS) $(FPU_FLAGS) -nostdlib -fuse-ld=lld \
+              -T stm32_ls.ld -Wl,--gc-sections -Wl,-Map=synth.map
 ARM_CFLAGS = -c -g -O2 $(CPU_FLAGS) $(FPU_FLAGS) -DSTM32F411xE -fno-builtin \
              -ffunction-sections -fdata-sections \
              -Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include \
              -Ichip_headers/CMSIS/Include
 
-ARM_LDFLAGS = $(CPU_FLAGS) $(FPU_FLAGS) -nostdlib \
-              -T stm32_ls.ld \
-              -Wl,--gc-sections \
-              -Wl,-Map=synth.map
 
-ARM_LIBS = -lm -lc -lnosys -lgcc
-ARM_SRCS = stm32f411_startup.c main.c src/platform_stm.c src/systick.c src/tb.c \
-	   src/gpio.c src/i2c.c src/codec.c src/i2s.c engine/engine.c src/i2s_dma.c \
-	   src/ssd1306.c src/adc.c src/ui.c 
+ARM_SRCS = platform/stm32/stm32f411_startup.c main.c \
+	   platform/stm32/platform_stm.c platform/stm32/systick.c engine/tb.c \
+	   platform/stm32/gpio.c platform/stm32/i2c.c platform/stm32/codec.c \
+	   platform/stm32/i2s.c engine/engine.c platform/stm32/i2s_dma.c \
+	   platform/stm32/ssd1306.c platform/stm32/adc.c engine/ui.c \
+	   platform/stm32/aeabi.c
 
 ARM_OBJS = $(ARM_SRCS:.c=.o)
 ARM_TARGET = synth.elf
@@ -34,15 +36,14 @@ ARM_TARGET = synth.elf
 all: $(ARM_TARGET)
 
 $(ARM_TARGET): $(ARM_OBJS)
-	$(CC_ARM) $(ARM_LDFLAGS) $^ $(ARM_LIBS) -o $@
+	$(CC_ARM) $(ARM_LDFLAGS) $^ -o $@
 
-# Any .c anywhere (root, src/, engine/) compiles the same way.
+# Any .c anywhere (root, engine/, platform/*/) compiles the same way.
 %.o: %.c
 	$(CC_ARM) $(CFLAGS_COMMON) $(ARM_CFLAGS) $< -o $@
 
 # ---- Host (desktop) ----
-CC_CLI = gcc
-CLI_SRCS = main.c engine/engine.c src/platform_cli.c src/tb.c
+CLI_SRCS = main.c engine/engine.c platform/desktop/platform_cli.c engine/tb.c
 LDLIBS_CLI = -lm
 
 cli: synth
@@ -68,6 +69,6 @@ flash: $(ARM_TARGET)
 	  -c "init; reset halt; program $(ARM_TARGET) verify reset exit"
 
 clean:
-	rm -f $(ARM_OBJS) *.o src/*.o engine/*.o $(ARM_TARGET) *.map synth
+	rm -f $(ARM_OBJS) *.o engine/*.o platform/*/*.o $(ARM_TARGET) *.map synth
 
 .PHONY: all cli wasm flash clean

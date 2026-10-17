@@ -13,6 +13,11 @@
 #define BPM 120
 #define STEPS 8
 #define DEBOUNCE 5
+#define POT_READS 8
+#define RESONANCE_MAX 0.9f        /* headroom below self-oscillation        */
+#define RESONANCE_SLEW 0.02f      /* ~1 ms poll -> full swing in ~45 ms      */
+#define RESONANCE_DEADBAND 0.005f /* ignores pot jitter below this delta  */
+#define ADC_FULL_SCALE 4095.0f    /* 12-bit ADC */
 #define SAMPLES_PER_STEP (SAMPLE_RATE * 60 / (BPM * 4))
 #define FRAMES_PER_HALF 256
 #define TOTAL_FRAMES (FRAMES_PER_HALF * 2)
@@ -93,6 +98,40 @@ static void blink_forever(int count, uint32_t on_ms, uint32_t off_ms,
   }
 }
 
+/* PA1 pot -> filter resonance. Average POT_READS 12-bit samples, map to
+ * 0..RESONANCE_MAX, then deadband + slew so ADC noise cannot flicker the
+ * filter. Called from the main loop; a single 32-bit float store is atomic on
+ * Cortex-M4, so the DMA ISR reads either the old or the new q, never a torn
+ * value. */
+static float read_resonance_pot(void) {
+  static float last = -1.0f;
+  uint32_t sum = 0;
+  float target;
+  int i;
+
+  for (i = 0; i < POT_READS; i++) {
+    sum += adc_read();
+  }
+  target = ((float)sum / (float)POT_READS) * (RESONANCE_MAX / ADC_FULL_SCALE);
+
+  if (last < 0.0f) {
+    last = target; /* first read: seed, do not slew up from a bogus value */
+  } else if (target > last + RESONANCE_DEADBAND) {
+    last += RESONANCE_SLEW;
+  } else if (target < last - RESONANCE_DEADBAND) {
+    last -= RESONANCE_SLEW;
+  }
+
+  if (last < 0.0f) {
+    last = 0.0f;
+  }
+  if (last > RESONANCE_MAX) {
+    last = RESONANCE_MAX;
+  }
+
+  return last;
+}
+
 void platform_fill_half(int half) {
   int i;
   int base = half * HALF_HALFWORDS;
@@ -127,10 +166,12 @@ void platform_init(void) {
   clock_status = i2s_clock_init();
   i2s3_init();
   e = engine_init();
-  engine_set_wave(&e, WAVE_SAW);
+  engine_set_wave(&e, WAVE_SINE);
   engine_set_bpm(&e, BPM);
   engine_set_steps(&e, STEPS, melody);
   pad_init();
+  pa1_adc_init();
+  start_conversion();
   engine_set_mode(&e, MONO);
   platform_fill_half(0);
   platform_fill_half(1);
@@ -166,6 +207,7 @@ void platform_init(void) {
     blink_forever(2, 250, 250, 1000); /* bus OK, but values wrong */
   } else {
     while (1) {
+      engine_set_resonance(&e, read_resonance_pot());
       if (poll_pads()) { /* redraw only when a debounced note event occurred */
         ui_render(&e);
         ssd1306_update();

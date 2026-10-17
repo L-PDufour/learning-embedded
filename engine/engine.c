@@ -15,29 +15,41 @@
 #define SECONDS_PER_MINUTE 60U
 #define STEPS_PER_BEAT 4U
 #define PHASE_RANGE 4294967296.0f
+#define PI 3.14159265358979323846f
+#define DEFAULT_RESONANCE 0.3f
+#define DAMP_MAX 2.0f
+#define DAMP_MIN 0.05f
 
-static const float wave_gain[WAVE_COUNT] = {
-    0.40f, /* WAVE_SQUARE:   many odd harmonics -> reads loudest */
-    0.50f, /* WAVE_SAW:      full harmonic stack        */
-    0.70f, /* WAVE_TRIANGLE: fewer harmonics            */
-    1.25f  /* WAVE_SINE:     single tone, reference     */
-};
+static const float wave_gain[WAVE_COUNT] = {0.40f, 0.50f, 0.70f, 1.25f};
+
+static void filter_set_resonance(Filter *filter, float resonance) {
+  if (resonance < 0.0f)
+    resonance = 0.0f;
+  if (resonance > 1.0f)
+    resonance = 1.0f;
+
+  filter->resonance = resonance;
+  filter->q = DAMP_MAX - resonance * (DAMP_MAX - DAMP_MIN);
+}
 
 static Filter filter_init(void) {
   Filter filter;
 
-  filter.filter_state = 0;
   filter.cutoff = 0;
-  filter.filter_p = 0;
+  filter.ic1eq = 0;
+  filter.ic2eq = 0;
+  filter.f = 0;
   filter.filter = FILTER_LOW_PASS;
+  filter_set_resonance(&filter, DEFAULT_RESONANCE);
 
   return filter;
 }
 
 static void filter_set_cutoff(Filter *filter, float cutoff) {
   filter->cutoff = cutoff;
-  filter->filter_p =
-      (1 - 2 * cutoff / SAMPLE_RATE) * (1 - 2 * cutoff / SAMPLE_RATE);
+  filter->f = 2.0f * PI * cutoff / SAMPLE_RATE;
+  if (filter->f > 1.0f)
+    filter->f = 1.0f;
 }
 
 Engine engine_init(void) {
@@ -60,24 +72,53 @@ Engine engine_init(void) {
 }
 
 static int16_t filter_process(Filter *filter, int16_t sample) {
-  float out = sample;
+  float x;
+  float f;
+  float q;
+  float band;
+  float low;
+  float high;
+  float out = 0.0f;
+
+  if (filter->filter == FILTER_NONE) {
+    return sample;
+  }
+
+  x = (float)sample;
+  f = filter->f;
+  q = filter->q;
+  band = filter->ic1eq;
+  low = filter->ic2eq;
+
+  low = low + f * band;
+  high = x - low - q * band;
+  band = band + f * high;
+
+  /* State carries between samples; never clamped (resonance lives here). */
+  filter->ic1eq = band;
+  filter->ic2eq = low;
 
   switch (filter->filter) {
   case FILTER_LOW_PASS:
-    filter->filter_state = (1 - filter->filter_p) * sample +
-                           filter->filter_p * filter->filter_state;
-    out = filter->filter_state;
+    out = low;
     break;
   case FILTER_HIGH_PASS:
-    filter->filter_state = (1 - filter->filter_p) * sample +
-                           filter->filter_p * filter->filter_state;
-    out = sample - filter->filter_state;
+    out = high;
     break;
-  case FILTER_NONE:
+  case FILTER_BAND_PASS:
+    out = band;
+    break;
   default:
-    out = sample;
+    TB_UNREACHABLE();
     break;
   }
+
+  /* Clamp only the output before narrowing to int16. */
+  if (out > 32767.0f)
+    out = 32767.0f;
+  if (out < -32768.0f)
+    out = -32768.0f;
+
   return (int16_t)out;
 }
 
@@ -277,4 +318,9 @@ void engine_fill_buffer(Engine *engine, sample_t *buf, uint32_t n) {
   for (i = 0; i < n; i++) {
     buf[i] = render_sample(engine);
   }
+}
+
+void engine_set_resonance(Engine *engine, float resonance) {
+  TB_ASSERT(engine != 0);
+  filter_set_resonance(&engine->filter, resonance);
 }

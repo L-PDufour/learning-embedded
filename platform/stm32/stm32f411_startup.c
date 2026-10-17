@@ -1,16 +1,18 @@
 #include "stm32f4xx.h"
 #include <stdint.h>
 
-/**Build:
-main.o :  arm-none-eabi-gcc -c -mcpu=cortex-m4 -mthumb -std=gnu11 main.c -o
-main.o stm32f411_startup.o : arm-none-eabi-gcc -c -mcpu=cortex-m4 -mthumb
--std=gnu11 stm32f411_startup.c -o stm32f411_startup.o stm32_blink.elf :
-arm-none-eabi-gcc -nostdlib -T stm32_ls.ld *.o -o stm32_blink.elf
--Wl,-Map=stm32_blink.map
+/**Build (see the Makefile for the real flags):
+arm-clang --target=thumbv7em-none-eabihf -mcpu=cortex-m4 -mthumb \
+  -c main.c -o main.o
+arm-clang --target=thumbv7em-none-eabihf -mcpu=cortex-m4 -mthumb \
+  -c stm32f411_startup.c -o stm32f411_startup.o
+arm-clang --target=thumbv7em-none-eabihf -mcpu=cortex-m4 -mthumb \
+  -nostdlib -fuse-ld=lld -T stm32_ls.ld *.o -o stm32_blink.elf \
+  -Wl,-Map=stm32_blink.map
 
 Load:
 
-openocd -f board/st_nucleo_f4.cfg
+make && make flash
 **/
 
 /*Symbols defined in the linker script */

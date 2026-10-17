@@ -85,8 +85,8 @@ under =-Werror=.
 
 - Host: =make cli && ./synth | aplay -f S16_LE -r 48000 -c 1=
 - Hardware: =make && make flash= (board on USB ST-LINK). Debug with OpenOCD in one
-  terminal and =arm-none-eabi-gdb synth.elf= + =target extended-remote :3333= in
-  another. When dumping live state, vary the halt delay so it never lands on the
+  terminal and =lldb synth.elf= + =gdb-remote localhost:3333= in another. When
+  dumping live state, vary the halt delay so it never lands on the
   same loop phase twice (a fixed =sleep= can read all-zeros on the =NOTE_REST=
   step).
 
@@ -263,8 +263,8 @@ They fail independently, so they get tested independently.
 |------------+---------------------+-------------------------------|
 | Language   | C99                 | Portable, embedded friendly   |
 | Build      | plain Make          | Suckless, already have it     |
-| Compiler   | GCC                 | Already in Nix flake          |
-| Debugger   | GDB + OpenOCD       | Terminal native               |
+| Compiler   | Clang / LLVM        | Already in Nix flake          |
+| Debugger   | LLDB + OpenOCD      | Terminal native               |
 | Audio lib  | miniaudio (header)  | Single header, no deps        |
 | Audio out  | stdout pipe aplay   | Most suckless option          |
 
@@ -309,9 +309,10 @@ The note control folds step on/off into pitch: the bottom of its range is
 =NOTE_REST=, matching the engine rule =enabled = note != REST=, so there is no
 separate on/off control.
 
-Filter select extends the engine =FilterType= from =LOW_PASS= to =LOW_PASS= /
-=HIGH_PASS= / =NONE= (bypass). =filter_process= derives the high-pass as
-=hp = x - lp=.
+Filter select uses the engine =FilterType= (=NONE / BAND_PASS / LOW_PASS /
+HIGH_PASS=), a two-pole state-variable filter: all three responses come from the
+same core, so the V1 button can cycle any subset. The planned button order stays
+LP -> HP -> Bypass.
 
 ** Bill of Materials (V1)
 
@@ -421,6 +422,14 @@ accumulator already removes most click artifacts.
 *** DONE Enable the FPU in CFLAGS
 *** DONE Course exercise files no longer compiled (explicit =ARM_SRCS=)
 *** DONE Split the Makefile so each target has its own compiler and wildcard
+*** DONE Replace GCC with Clang/LLVM on both targets
+CLOSED: [2026-10-17 Sat]
+    Host builds with =clang=, ARM with =arm-clang= (=clang-unwrapped
+    --target=thumbv7em-none-eabihf=) and =ld.lld=. Firmware links =-nostdlib=
+    with no libc/libm; =platform/stm32/aeabi.c= provides =__aeabi_memcpy4=,
+    which Clang emits for the =Engine= return. The linker script needed
+    whitespace in the =MEMORY= line for lld. =picolibc= was removed from the
+    flake (the Nix package is x86-64, not ARM).
 
 ** DONE Phase 4 - Codec bring-up (hardware)
 
@@ -469,9 +478,15 @@ CLOSED: [2026-10-01 Thu]
 
 ** Phase 5 - Sound design (after audible)
 
-*** TODO Add =FILTER_HIGH_PASS= / =FILTER_NONE= + audition mode
-    Needed by the V1 "Filter" button (LP/HP/Bypass) and pad-held EDIT. See the
-    V1 build plan, steps A and F.
+*** DONE Filter types + audition (2-pole state-variable filter)
+CLOSED: [2026-10-13 Tue]
+    =FilterType= is =FILTER_NONE / FILTER_BAND_PASS / FILTER_LOW_PASS=
+    / =FILTER_HIGH_PASS=. =filter_process= is a Chamberlin SVF: one core
+    (=low += f*band; high = x - low - q*band; band += f*high=) yields LP/HP/BP;
+    =NONE= returns early (true bypass). =f= from cutoff is =2*PI*fc/fs= clamped
+    <=1.0 (~=fs/6= ~ 8 kHz at 48 kHz, the Euler stability limit); =q= is the
+    damping from =engine_set_resonance= (=q = 2 - res*1.95=). A PA1 pot drives
+    resonance live on hardware. See the V1 build plan, step A.
 *** TODO Add a clean/crushed flag
     Shared oscillators, shared output path. Retro mode = mask low bits, hold
     samples, bypass filter. Roughly 30 lines. Lets the choice be made by ear on
@@ -522,14 +537,29 @@ synth/
 synth/
 |- engine/engine.c        # everything: osc + filter + sequencer
 |- engine/sine_table.h    # generated wavetable
-|- src/platform_cli.c     # desktop target
-|- src/platform_stm.c     # STM32 target (DMA ISR, stereo interleave)
-|- src/{i2c,codec,i2s,i2s_dma,gpio,systick}.c
-|- src/{ssd1306,adc,adc_dma,dma,uart,uart_dma,rtc,tim,spi,iwdg,syscalls}.c  # course scaffolding
-|- Inc/                   # shared headers
-|- main.c
+|- engine/tb.c            # assert runtime (portable; links into both targets)
+|- engine/ui.c            # engine state -> text, portable (no hardware access)
+|- platform/desktop/platform_cli.c   # desktop target: raw int16 on stdout
+|- platform/stm32/platform_stm.c     # STM32 target (DMA ISR, pad/pot polling)
+|- platform/stm32/{i2c,codec,i2s,i2s_dma,gpio,systick,adc}.c
+|- platform/stm32/ssd1306.c          # OLED driver (I2C; not portable)
+|- platform/stm32/stm32f411_startup.c
+|- platform/stm32/aeabi.c            # __aeabi_memcpy4 (no ARM compiler-rt)
+|- Inc/                   # shared headers (flat; one dir for both targets)
+|- main.c                 # shared entry point, calls platform_init()
+|- tools/gen_sine.c       # host-only wavetable generator
 \- Makefile
 #+END_EXAMPLE
+
+The ten course-scaffolding files (=adc_dma=, =dma=, =gpio_exti=, =iwdg=, =rtc=,
+=spi=, =tim=, =uart=, =uart_dma=, =syscalls=) were deleted in the folder reorg;
+they were in no build target and nothing called them. Recover from git history
+if needed.
+
+=ui.c= sits in =engine/= because it is portable (it formats =engine_get_note()=
+into text and calls only =ssd1306_*=). =ssd1306.c= stays in =platform/stm32/=
+because it talks to I2C hardware. That asymmetry is the HAL gap: =ui.c= currently
+depends on a hardware-specific header, which a =display.h= abstraction would fix.
 
 The split into =oscillator.c= / =envelope.c= / =filter.c= / =sequencer.c= is
 worth doing when the envelope gets written - that is the natural moment, since
@@ -547,9 +577,15 @@ States: attack, decay, sustain, release. A linear attack/release ramp exists
 today (=MAX_RAMP=); full ADSR is deferred.
 
 ** Filter
-One-pole low pass, applied per sample. Currently =(1 - 2*fc/fs)^2= as the
-coefficient, cutoff 4000 Hz. =HIGH_PASS= / =NONE= bypass are planned (build
-plan step A).
+Two-pole state-variable filter (Chamberlin), applied per sample. One core
+yields low-pass, high-pass and band-pass; =NONE= bypasses (returns early). The
+cutoff sets =f = 2*PI*fc/fs=, clamped <= 1.0 for Euler stability (~=fs/6= ~
+8 kHz at 48 kHz; the LP/HP/BP Euler integrator is unstable above that); default
+4000 Hz. Resonance sets the damping =q= (=q = 2.0 - res*1.95=): higher
+resonance = lower q = higher Q; default =res= 0.3 -> =q ~= 1.414= (~Butterworth).
+The two integrator states (=ic1eq=/=ic2eq=) carry between samples and are never
+clamped - only the int16 output is. A PA1 pot drives =engine_set_resonance=
+live on hardware.
 
 ** Step Sequencer
 Array of 8 steps, each with a note and on/off state. Counts samples to advance

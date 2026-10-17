@@ -136,14 +136,18 @@ typedef enum {
 
 typedef enum {
   FILTER_NONE,
+  FILTER_BAND_PASS,
   FILTER_LOW_PASS,
   FILTER_HIGH_PASS,
 } FilterType;
 
 typedef struct filter {
-  float filter_state;
   float cutoff;
-  float filter_p;
+  float ic1eq;
+  float ic2eq;
+  float f;
+  float q;
+  float resonance;
   FilterType filter;
 } Filter;
 
@@ -190,5 +194,5 @@ void engine_note_on(Engine *engine, MusicNote note);
 void engine_note_off(Engine *engine);
 MusicNote engine_get_note(Engine *engine);
 void engine_set_step_note(Engine *engine, uint32_t step, MusicNote note);
-
+void engine_set_resonance(Engine *engine, float resonance);
 #endif

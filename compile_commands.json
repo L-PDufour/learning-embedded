@@ -1,8 +1,81 @@
 [
   {
-    "file": "stm32f411_startup.c",
+    "file": "main.c",
     "arguments": [
-      "arm-none-eabi-gcc",
+      "clang",
+      "-std=c99",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-I",
+      "Inc",
+      "main.c",
+      "-o",
+      "synth"
+    ],
+    "directory": "/home/desktop/Documents/synth",
+    "output": "synth"
+  },
+  {
+    "file": "engine/engine.c",
+    "arguments": [
+      "clang",
+      "-std=c99",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-I",
+      "Inc",
+      "engine/engine.c",
+      "-o",
+      "synth"
+    ],
+    "directory": "/home/desktop/Documents/synth",
+    "output": "synth"
+  },
+  {
+    "file": "platform/desktop/platform_cli.c",
+    "arguments": [
+      "clang",
+      "-std=c99",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-I",
+      "Inc",
+      "platform/desktop/platform_cli.c",
+      "-o",
+      "synth"
+    ],
+    "directory": "/home/desktop/Documents/synth",
+    "output": "synth"
+  },
+  {
+    "file": "engine/tb.c",
+    "arguments": [
+      "clang",
+      "-std=c99",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-I",
+      "Inc",
+      "engine/tb.c",
+      "-o",
+      "synth"
+    ],
+    "directory": "/home/desktop/Documents/synth",
+    "output": "synth"
+  },
+  {
+    "file": "platform/stm32/stm32f411_startup.c",
+    "arguments": [
+      "arm-clang",
+      "--target=thumbv7em-none-eabihf",
       "-std=c99",
       "-Wall",
       "-Wextra",
@@ -23,17 +96,18 @@
       "-fdata-sections",
       "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
       "-Ichip_headers/CMSIS/Include",
-      "stm32f411_startup.c",
+      "platform/stm32/stm32f411_startup.c",
       "-o",
-      "stm32f411_startup.o"
+      "platform/stm32/stm32f411_startup.o"
     ],
     "directory": "/home/desktop/Documents/synth",
-    "output": "stm32f411_startup.o"
+    "output": "platform/stm32/stm32f411_startup.o"
   },
   {
     "file": "main.c",
     "arguments": [
-      "arm-none-eabi-gcc",
+      "arm-clang",
+      "--target=thumbv7em-none-eabihf",
       "-std=c99",
       "-Wall",
       "-Wextra",
@@ -62,9 +136,10 @@
     "output": "main.o"
   },
   {
-    "file": "src/platform_stm.c",
+    "file": "platform/stm32/platform_stm.c",
     "arguments": [
-      "arm-none-eabi-gcc",
+      "arm-clang",
+      "--target=thumbv7em-none-eabihf",
       "-std=c99",
       "-Wall",
       "-Wextra",
@@ -85,17 +160,18 @@
       "-fdata-sections",
       "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
       "-Ichip_headers/CMSIS/Include",
-      "src/platform_stm.c",
+      "platform/stm32/platform_stm.c",
       "-o",
-      "src/platform_stm.o"
+      "platform/stm32/platform_stm.o"
     ],
     "directory": "/home/desktop/Documents/synth",
-    "output": "src/platform_stm.o"
+    "output": "platform/stm32/platform_stm.o"
   },
   {
-    "file": "src/systick.c",
+    "file": "platform/stm32/systick.c",
     "arguments": [
-      "arm-none-eabi-gcc",
+      "arm-clang",
+      "--target=thumbv7em-none-eabihf",
       "-std=c99",
       "-Wall",
       "-Wextra",
@@ -116,17 +192,18 @@
       "-fdata-sections",
       "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
       "-Ichip_headers/CMSIS/Include",
-      "src/systick.c",
+      "platform/stm32/systick.c",
       "-o",
-      "src/systick.o"
+      "platform/stm32/systick.o"
     ],
     "directory": "/home/desktop/Documents/synth",
-    "output": "src/systick.o"
+    "output": "platform/stm32/systick.o"
   },
   {
-    "file": "src/tb.c",
+    "file": "engine/tb.c",
     "arguments": [
-      "arm-none-eabi-gcc",
+      "arm-clang",
+      "--target=thumbv7em-none-eabihf",
       "-std=c99",
       "-Wall",
       "-Wextra",
@@ -147,17 +224,18 @@
       "-fdata-sections",
       "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
       "-Ichip_headers/CMSIS/Include",
-      "src/tb.c",
+      "engine/tb.c",
       "-o",
-      "src/tb.o"
+      "engine/tb.o"
     ],
     "directory": "/home/desktop/Documents/synth",
-    "output": "src/tb.o"
+    "output": "engine/tb.o"
   },
   {
-    "file": "src/gpio.c",
+    "file": "platform/stm32/gpio.c",
     "arguments": [
-      "arm-none-eabi-gcc",
+      "arm-clang",
+      "--target=thumbv7em-none-eabihf",
       "-std=c99",
       "-Wall",
       "-Wextra",
@@ -178,17 +256,18 @@
       "-fdata-sections",
       "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
       "-Ichip_headers/CMSIS/Include",
-      "src/gpio.c",
+      "platform/stm32/gpio.c",
       "-o",
-      "src/gpio.o"
+      "platform/stm32/gpio.o"
     ],
     "directory": "/home/desktop/Documents/synth",
-    "output": "src/gpio.o"
+    "output": "platform/stm32/gpio.o"
   },
   {
-    "file": "src/i2c.c",
+    "file": "platform/stm32/i2c.c",
     "arguments": [
-      "arm-none-eabi-gcc",
+      "arm-clang",
+      "--target=thumbv7em-none-eabihf",
       "-std=c99",
       "-Wall",
       "-Wextra",
@@ -209,17 +288,18 @@
       "-fdata-sections",
       "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
       "-Ichip_headers/CMSIS/Include",
-      "src/i2c.c",
+      "platform/stm32/i2c.c",
       "-o",
-      "src/i2c.o"
+      "platform/stm32/i2c.o"
     ],
     "directory": "/home/desktop/Documents/synth",
-    "output": "src/i2c.o"
+    "output": "platform/stm32/i2c.o"
   },
   {
-    "file": "src/codec.c",
+    "file": "platform/stm32/codec.c",
     "arguments": [
-      "arm-none-eabi-gcc",
+      "arm-clang",
+      "--target=thumbv7em-none-eabihf",
       "-std=c99",
       "-Wall",
       "-Wextra",
@@ -240,17 +320,18 @@
       "-fdata-sections",
       "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
       "-Ichip_headers/CMSIS/Include",
-      "src/codec.c",
+      "platform/stm32/codec.c",
       "-o",
-      "src/codec.o"
+      "platform/stm32/codec.o"
     ],
     "directory": "/home/desktop/Documents/synth",
-    "output": "src/codec.o"
+    "output": "platform/stm32/codec.o"
   },
   {
-    "file": "src/i2s.c",
+    "file": "platform/stm32/i2s.c",
     "arguments": [
-      "arm-none-eabi-gcc",
+      "arm-clang",
+      "--target=thumbv7em-none-eabihf",
       "-std=c99",
       "-Wall",
       "-Wextra",
@@ -271,17 +352,18 @@
       "-fdata-sections",
       "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
       "-Ichip_headers/CMSIS/Include",
-      "src/i2s.c",
+      "platform/stm32/i2s.c",
       "-o",
-      "src/i2s.o"
+      "platform/stm32/i2s.o"
     ],
     "directory": "/home/desktop/Documents/synth",
-    "output": "src/i2s.o"
+    "output": "platform/stm32/i2s.o"
   },
   {
     "file": "engine/engine.c",
     "arguments": [
-      "arm-none-eabi-gcc",
+      "arm-clang",
+      "--target=thumbv7em-none-eabihf",
       "-std=c99",
       "-Wall",
       "-Wextra",
@@ -308,5 +390,165 @@
     ],
     "directory": "/home/desktop/Documents/synth",
     "output": "engine/engine.o"
+  },
+  {
+    "file": "platform/stm32/i2s_dma.c",
+    "arguments": [
+      "arm-clang",
+      "--target=thumbv7em-none-eabihf",
+      "-std=c99",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-I",
+      "Inc",
+      "-c",
+      "-g",
+      "-O2",
+      "-mcpu=cortex-m4",
+      "-mthumb",
+      "-mfpu=fpv4-sp-d16",
+      "-mfloat-abi=hard",
+      "-DSTM32F411xE",
+      "-fno-builtin",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
+      "-Ichip_headers/CMSIS/Include",
+      "platform/stm32/i2s_dma.c",
+      "-o",
+      "platform/stm32/i2s_dma.o"
+    ],
+    "directory": "/home/desktop/Documents/synth",
+    "output": "platform/stm32/i2s_dma.o"
+  },
+  {
+    "file": "platform/stm32/ssd1306.c",
+    "arguments": [
+      "arm-clang",
+      "--target=thumbv7em-none-eabihf",
+      "-std=c99",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-I",
+      "Inc",
+      "-c",
+      "-g",
+      "-O2",
+      "-mcpu=cortex-m4",
+      "-mthumb",
+      "-mfpu=fpv4-sp-d16",
+      "-mfloat-abi=hard",
+      "-DSTM32F411xE",
+      "-fno-builtin",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
+      "-Ichip_headers/CMSIS/Include",
+      "platform/stm32/ssd1306.c",
+      "-o",
+      "platform/stm32/ssd1306.o"
+    ],
+    "directory": "/home/desktop/Documents/synth",
+    "output": "platform/stm32/ssd1306.o"
+  },
+  {
+    "file": "platform/stm32/adc.c",
+    "arguments": [
+      "arm-clang",
+      "--target=thumbv7em-none-eabihf",
+      "-std=c99",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-I",
+      "Inc",
+      "-c",
+      "-g",
+      "-O2",
+      "-mcpu=cortex-m4",
+      "-mthumb",
+      "-mfpu=fpv4-sp-d16",
+      "-mfloat-abi=hard",
+      "-DSTM32F411xE",
+      "-fno-builtin",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
+      "-Ichip_headers/CMSIS/Include",
+      "platform/stm32/adc.c",
+      "-o",
+      "platform/stm32/adc.o"
+    ],
+    "directory": "/home/desktop/Documents/synth",
+    "output": "platform/stm32/adc.o"
+  },
+  {
+    "file": "engine/ui.c",
+    "arguments": [
+      "arm-clang",
+      "--target=thumbv7em-none-eabihf",
+      "-std=c99",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-I",
+      "Inc",
+      "-c",
+      "-g",
+      "-O2",
+      "-mcpu=cortex-m4",
+      "-mthumb",
+      "-mfpu=fpv4-sp-d16",
+      "-mfloat-abi=hard",
+      "-DSTM32F411xE",
+      "-fno-builtin",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
+      "-Ichip_headers/CMSIS/Include",
+      "engine/ui.c",
+      "-o",
+      "engine/ui.o"
+    ],
+    "directory": "/home/desktop/Documents/synth",
+    "output": "engine/ui.o"
+  },
+  {
+    "file": "platform/stm32/aeabi.c",
+    "arguments": [
+      "arm-clang",
+      "--target=thumbv7em-none-eabihf",
+      "-std=c99",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-I",
+      "Inc",
+      "-c",
+      "-g",
+      "-O2",
+      "-mcpu=cortex-m4",
+      "-mthumb",
+      "-mfpu=fpv4-sp-d16",
+      "-mfloat-abi=hard",
+      "-DSTM32F411xE",
+      "-fno-builtin",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-Ichip_headers/CMSIS/Device/ST/STM32F4xx/Include",
+      "-Ichip_headers/CMSIS/Include",
+      "platform/stm32/aeabi.c",
+      "-o",
+      "platform/stm32/aeabi.o"
+    ],
+    "directory": "/home/desktop/Documents/synth",
+    "output": "platform/stm32/aeabi.o"
   }
 ]
