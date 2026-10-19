@@ -512,6 +512,16 @@ CLOSED: [2026-10-04 Sun]
 *** TODO Wave/filter cycle buttons + runtime =codec_set_volume=
 *** TODO 74HC165 only if pins run out (8 pads on direct GPIO first)
 
+0  PLAY 120BPM VOL 65
+1  STEP 3/8  E4
+2  C4D4..[E4]G4..A4..
+3  WAVE SINE  FILT LP
+4  CUT 4000Hz
+5  RES 0.80  GATE 1.0
+6  ENC E4    SEL 3
+7  ISR 28708  I2C OK
+
+
 * Folder Structure
 
 ** Intended

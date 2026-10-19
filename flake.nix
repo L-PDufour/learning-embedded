@@ -43,6 +43,7 @@
             openocd
             stlink
             picocom
+            alsa-utils
           ];
 
           shellHook = ''

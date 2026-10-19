@@ -156,6 +156,7 @@ void platform_init(void) {
   uint8_t vol = 0;
   I2cStatus status;
   I2cStatus clock_status;
+  UiStatus ui;
 
   systick_init();
   DEMCR |= (1U << 24); /* TRCENA: enable the debug cycle counter */
@@ -180,8 +181,10 @@ void platform_init(void) {
 
   ssd1306_init();
   ssd1306_clear();
-
+  ui.volume = codec_get_volume();
+  ui_render(&e, &ui);
   ssd1306_update();
+
   /* Configure the codec, power it on, then prove the write path. */
   status = codec_init();
   if (status == I2C_OK) {
@@ -209,7 +212,8 @@ void platform_init(void) {
     while (1) {
       engine_set_resonance(&e, read_resonance_pot());
       if (poll_pads()) { /* redraw only when a debounced note event occurred */
-        ui_render(&e);
+        ui.volume = codec_get_volume();
+        ui_render(&e, &ui);
         ssd1306_update();
       }
       systick_msec_delay(1);

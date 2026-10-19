@@ -324,3 +324,13 @@ void engine_set_resonance(Engine *engine, float resonance) {
   TB_ASSERT(engine != 0);
   filter_set_resonance(&engine->filter, resonance);
 }
+
+Mode engine_get_mode(const Engine *engine) {
+  TB_ASSERT(engine != 0);
+  return engine->current_mode;
+}
+
+uint32_t engine_get_bpm(const Engine *engine) {
+  TB_ASSERT(engine != 0);
+  return engine->bpm;
+}

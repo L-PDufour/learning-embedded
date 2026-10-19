@@ -18,6 +18,9 @@
 #define REG_LIMIT_CTL1 0x27
 #define REG_HEADPHONE_VOL_A 0x22
 #define REG_HEADPHONE_VOL_B 0x23
+#define CODEC_VOLUME_MAX 100U
+
+static uint8_t codec_volume = CS43L22_VOLUME;
 
 static uint8_t volume_to_reg(uint8_t percent) {
   uint32_t reg;
@@ -31,14 +34,38 @@ static uint8_t volume_to_reg(uint8_t percent) {
   return (uint8_t)reg;
 }
 
-uint8_t codec_volume_reg(void) { return volume_to_reg(CS43L22_VOLUME); }
+uint8_t codec_volume_reg(void) { return volume_to_reg(codec_volume); }
+
+uint8_t codec_get_volume(void) { return codec_volume; }
 
 static I2cStatus wr(uint8_t reg, uint8_t val) {
   return i2c1_byte_write(CS43L22_ADDR, reg, val);
 }
 
+I2cStatus codec_set_volume(uint8_t percent) {
+  I2cStatus s;
+  uint8_t reg;
+
+  if (percent > CODEC_VOLUME_MAX) {
+    percent = CODEC_VOLUME_MAX;
+  }
+  reg = volume_to_reg(percent);
+
+  s = wr(REG_MASTER_A_VOL, reg);
+  if (s != I2C_OK) {
+    return s;
+  }
+  s = wr(REG_MASTER_B_VOL, reg);
+  if (s != I2C_OK) {
+    return s;
+  }
+
+  codec_volume = percent;
+  return I2C_OK;
+}
+
 I2cStatus codec_init(void) {
-  uint8_t vol = volume_to_reg(CS43L22_VOLUME); /* pick e.g. 80 */
+  uint8_t vol = codec_volume_reg();
   I2cStatus s;
 
   s = wr(REG_POWER_CTL1, 0x01);

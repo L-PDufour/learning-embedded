@@ -195,4 +195,6 @@ void engine_note_off(Engine *engine);
 MusicNote engine_get_note(Engine *engine);
 void engine_set_step_note(Engine *engine, uint32_t step, MusicNote note);
 void engine_set_resonance(Engine *engine, float resonance);
+Mode engine_get_mode(const Engine *engine);
+uint32_t engine_get_bpm(const Engine *engine);
 #endif

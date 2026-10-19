@@ -3,7 +3,7 @@
 
 #include "i2c.h"
 
-#define CS43L22_ADDR 0x4A /* 7-bit control-port address */
+#define CS43L22_ADDR 0x4A
 #define CS43L22_ID_REG 0x01
 #define CS43L22_ID 0xE0
 #define CS43L22_ID_MASK 0xF8
@@ -13,6 +13,8 @@
 
 I2cStatus codec_init(void);
 I2cStatus codec_play(void);
-uint8_t codec_volume_reg(void); /* encoded value written to MASTER_x_VOL */
+I2cStatus codec_set_volume(uint8_t percent);
+uint8_t codec_get_volume(void);
+uint8_t codec_volume_reg(void);
 
 #endif
