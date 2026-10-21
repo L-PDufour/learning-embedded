@@ -148,7 +148,7 @@ typedef struct filter {
   float f;
   float q;
   float resonance;
-  FilterType filter;
+  FilterType type;
 } Filter;
 
 typedef enum {
@@ -197,4 +197,10 @@ void engine_set_step_note(Engine *engine, uint32_t step, MusicNote note);
 void engine_set_resonance(Engine *engine, float resonance);
 Mode engine_get_mode(const Engine *engine);
 uint32_t engine_get_bpm(const Engine *engine);
+WaveType engine_get_wave(const Engine *engine);
+FilterType engine_get_filter(const Engine *engine);
+float engine_get_cutoff(const Engine *engine);
+float engine_get_resonance(const Engine *engine);
+uint32_t engine_get_current_step(const Engine *engine);
+uint32_t engine_get_num_steps(const Engine *engine);
 #endif

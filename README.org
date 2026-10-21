@@ -172,6 +172,41 @@ under =-Werror=.
 2. Volume safety cap (e.g. 80).
 3. Faceplate / case + labels; final demo.
 
+* V2 Ideas (post-V1)
+
+Not commitments - a parking lot for after V1 is playable. Ordered by value per
+line of code.
+
+** Smallest biggest win: ADSR envelope
+- Today =apply_voice= slews =ramp= toward 0 or 1 at =1/256= per sample (a fixed
+  ~5.3 ms attack/release, no decay or sustain), so every note is an organ drone.
+- Fixed-time ADSR with no new controls (attack ~5 ms, decay ~80 ms, sustain
+  ~0.6, release ~100 ms): roughly 20-30 lines, no RAM, negligible CPU.
+- Trigger on note change or gate rising; keep the no-phase-reset behaviour.
+- Unlocks filter-envelope amount and LFO -> amp later.
+- Fallback if that is still too much: AD-only exponential decay (~10 lines),
+  at the cost of held MONO notes fading out.
+
+** Cheap voicing upgrades
+- LFO: rate/depth/shape, destination pitch, cutoff, amp or PWM.
+- Glide/portamento by slewing =phase_inc=.
+- Pulse-width control on the square, sub-oscillator, second detuned oscillator.
+- Octave transpose.
+- Filter envelope amount and key tracking (needs ADSR first).
+
+** Effects (check the 16 MHz CPU budget first)
+- Drive: stateless waveshaper, no RAM, a few cycles/sample - easiest.
+- Chorus: 10-30 ms delay line (~1-3 KB mono) plus an LFO - moderate CPU.
+- Delay: 250 ms mono =int16= needs 24 KB, 500 ms needs 48 KB; add feedback,
+  dry/wet and a safety clamp.
+- Reverb: likely 25-50 KB and high CPU; realistically needs the 100 MHz PLL.
+- Raising SYSCLK to 100 MHz is the enabler: update flash wait states, SysTick,
+  I2C =FREQ= (hardcoded for 16 MHz) and the APB prescalers.
+
+** Deliberately out of scope for V1
+- Polyphony / voice allocation, velocity (the pads are on/off), pitch bend and
+  mod wheel (no hardware), full modulation matrix.
+
 * Board Change (April -> August 2026)
 
 Originally targeted the STM32F446RE, which has two internal 12-bit DACs.

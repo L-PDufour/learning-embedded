@@ -39,7 +39,7 @@ static Filter filter_init(void) {
   filter.ic1eq = 0;
   filter.ic2eq = 0;
   filter.f = 0;
-  filter.filter = FILTER_LOW_PASS;
+  filter.type = FILTER_LOW_PASS;
   filter_set_resonance(&filter, DEFAULT_RESONANCE);
 
   return filter;
@@ -80,7 +80,7 @@ static int16_t filter_process(Filter *filter, int16_t sample) {
   float high;
   float out = 0.0f;
 
-  if (filter->filter == FILTER_NONE) {
+  if (filter->type == FILTER_NONE) {
     return sample;
   }
 
@@ -98,7 +98,7 @@ static int16_t filter_process(Filter *filter, int16_t sample) {
   filter->ic1eq = band;
   filter->ic2eq = low;
 
-  switch (filter->filter) {
+  switch (filter->type) {
   case FILTER_LOW_PASS:
     out = low;
     break;
@@ -330,7 +330,37 @@ Mode engine_get_mode(const Engine *engine) {
   return engine->current_mode;
 }
 
+WaveType engine_get_wave(const Engine *engine) {
+  TB_ASSERT(engine != 0);
+  return engine->wave;
+}
+
 uint32_t engine_get_bpm(const Engine *engine) {
   TB_ASSERT(engine != 0);
   return engine->bpm;
+}
+
+FilterType engine_get_filter(const Engine *engine) {
+  TB_ASSERT(engine != 0);
+  return engine->filter.type;
+}
+
+float engine_get_cutoff(const Engine *engine) {
+  TB_ASSERT(engine != 0);
+  return engine->filter.cutoff;
+}
+
+float engine_get_resonance(const Engine *engine) {
+  TB_ASSERT(engine != 0);
+  return engine->filter.resonance;
+}
+
+uint32_t engine_get_current_step(const Engine *engine) {
+  TB_ASSERT(engine != 0);
+  return engine->current_step;
+}
+
+uint32_t engine_get_num_steps(const Engine *engine) {
+  TB_ASSERT(engine != 0);
+  return engine->num_steps;
 }

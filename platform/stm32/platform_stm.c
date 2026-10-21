@@ -18,6 +18,7 @@
 #define RESONANCE_SLEW 0.02f      /* ~1 ms poll -> full swing in ~45 ms      */
 #define RESONANCE_DEADBAND 0.005f /* ignores pot jitter below this delta  */
 #define ADC_FULL_SCALE 4095.0f    /* 12-bit ADC */
+#define UI_REFRESH_MS 50U         /* throttle pot-only redraws            */
 #define SAMPLES_PER_STEP (SAMPLE_RATE * 60 / (BPM * 4))
 #define FRAMES_PER_HALF 256
 #define TOTAL_FRAMES (FRAMES_PER_HALF * 2)
@@ -157,6 +158,13 @@ void platform_init(void) {
   I2cStatus status;
   I2cStatus clock_status;
   UiStatus ui;
+  uint32_t shown_step;
+  uint32_t last_ui;
+  uint32_t step_now;
+  uint32_t now;
+  int shown_res;
+  int res_now;
+  float res;
 
   systick_init();
   DEMCR |= (1U << 24); /* TRCENA: enable the debug cycle counter */
@@ -184,6 +192,9 @@ void platform_init(void) {
   ui.volume = codec_get_volume();
   ui_render(&e, &ui);
   ssd1306_update();
+  shown_step = engine_get_current_step(&e);
+  shown_res = (int)(engine_get_resonance(&e) * 100.0f + 0.5f);
+  last_ui = systick_millis();
 
   /* Configure the codec, power it on, then prove the write path. */
   status = codec_init();
@@ -210,11 +221,20 @@ void platform_init(void) {
     blink_forever(2, 250, 250, 1000); /* bus OK, but values wrong */
   } else {
     while (1) {
-      engine_set_resonance(&e, read_resonance_pot());
-      if (poll_pads()) { /* redraw only when a debounced note event occurred */
+      res = read_resonance_pot();
+      engine_set_resonance(&e, res);
+      step_now = engine_get_current_step(&e);
+      res_now = (int)(res * 100.0f + 0.5f);
+      now = systick_millis();
+
+      if (poll_pads() || step_now != shown_step ||
+          (res_now != shown_res && (now - last_ui) >= UI_REFRESH_MS)) {
         ui.volume = codec_get_volume();
         ui_render(&e, &ui);
         ssd1306_update();
+        shown_step = step_now;
+        shown_res = res_now;
+        last_ui = now;
       }
       systick_msec_delay(1);
     }
