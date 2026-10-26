@@ -1,6 +1,7 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
+#include "filter.h"
 #include "tb.h"
 #include <stdint.h>
 
@@ -133,23 +134,6 @@ typedef enum {
   WAVE_SINE,
   WAVE_COUNT
 } WaveType;
-
-typedef enum {
-  FILTER_NONE,
-  FILTER_BAND_PASS,
-  FILTER_LOW_PASS,
-  FILTER_HIGH_PASS,
-} FilterType;
-
-typedef struct filter {
-  float cutoff;
-  float ic1eq;
-  float ic2eq;
-  float f;
-  float q;
-  float resonance;
-  FilterType type;
-} Filter;
 
 typedef enum {
   STOP,

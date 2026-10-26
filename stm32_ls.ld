@@ -41,6 +41,7 @@ SECTIONS
 	 . = ALIGN(4);
 	_edata = .;   /*Create a global symbol to hold end of data section*/
 	} > SRAM AT> FLASH  /*>(vma) AT> (lma)*/
+	_sidata = LOADADDR(.data);  /*FLASH source address of the .data image*/
 
 
 	/*third section of output file*/

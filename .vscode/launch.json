@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "STM32 attach (release synth.elf)",
+      "type": "lldb",
+      "request": "attach",
+      "program": "${workspaceFolder}/synth.elf",
+      "gdb-remote-hostname": "localhost",
+      "gdb-remote-port": 3333
+    },
+    {
+      "name": "STM32 attach (debug synth-debug.elf)",
+      "type": "lldb",
+      "request": "attach",
+      "program": "${workspaceFolder}/synth-debug.elf",
+      "gdb-remote-hostname": "localhost",
+      "gdb-remote-port": 3333
+    }
+  ]
+}

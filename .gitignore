@@ -1,12 +1,14 @@
 /.direnv/bin
 /.direnv
 *.o
+*.dbo
 /synth.elf
 /synth.map
 /.cache/clangd/index
 /AGENTS.md
 /TEACHING.org
 /synth
+/synth-debug.elf
 /a.out
 /TAGS
 /.synth-tabspaces-session.el
