@@ -56,10 +56,9 @@ static uint32_t fmt_fixed2(char *out, float n) {
   out[0] = (char)('0' + whole);
   out[1] = '.';
   out[2] = (char)('0' + frac / 10);
-  out[3] = (char)('0' + frac % 10);
-  out[4] = '\0';
+  out[3] = '\0';
 
-  return 4;
+  return 3;
 }
 
 static void note_name(MusicNote note, char *out) {

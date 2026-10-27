@@ -15,7 +15,7 @@ Filter filter_init(void) {
   filter.ic1eq = 0;
   filter.ic2eq = 0;
   filter.f = 0;
-  filter.type = FILTER_NONE; /* off until the cutoff control exists */
+  filter.type = FILTER_LOW_PASS; /* off until the cutoff control exists */
   filter_set_resonance(&filter, DEFAULT_RESONANCE);
   filter_set_cutoff(&filter, DEFAULT_CUTOFF_HZ);
 

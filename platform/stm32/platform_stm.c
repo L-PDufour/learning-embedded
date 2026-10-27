@@ -12,7 +12,7 @@
 
 #define BPM 120
 #define STEPS 8
-#define DEBOUNCE 5
+#define DEBOUNCE 0
 #define POT_READS 8
 #define RESONANCE_MAX 0.9f        /* headroom below self-oscillation        */
 #define RESONANCE_SLEW 0.02f      /* ~1 ms poll -> full swing in ~45 ms      */
@@ -54,6 +54,7 @@ static uint8_t poll_pads(void) {
   static int active = -1;
   uint8_t is_dirty = 0;
   uint8_t raw = pad_read();
+  uint8_t newly;
 
   if (raw != raw_prev) {
     raw_prev = raw;
@@ -62,13 +63,24 @@ static uint8_t poll_pads(void) {
     count++;
   }
 
+  /* A press is acted on at once. Waiting DEBOUNCE polls for it made the
+   * required hold time proportional to the loop period, so a blocked loop
+   * swallowed short taps. A bounce cannot re-fire the note: `stable` already
+   * holds the bit, so only a genuinely new bit reaches this path again. */
+  newly = (uint8_t)(raw & ~stable);
+  if (newly != 0) {
+    stable = raw;
+    active = highest_pad(newly); /* a key went down: it wins (last-pressed) */
+    engine_note_on(&e, keys[active]);
+    return 1;
+  }
+
+  /* Release, and falling back to a pad still held, stay debounced: a late
+   * note-off is inaudible, a late note-on is not. */
   if (count >= DEBOUNCE && raw != stable) {
-    uint8_t newly = (uint8_t)(raw & ~stable);
     stable = raw;
 
-    if (newly != 0) { /* a key went down: it wins (last-pressed) */
-      active = highest_pad(newly);
-    } else if (active >= 0 && (stable & (1U << active)) == 0) {
+    if (active >= 0 && (stable & (1U << active)) == 0) {
       active = highest_pad(stable); /* active released: fall back to any held */
     }
 
@@ -77,7 +89,7 @@ static uint8_t poll_pads(void) {
     } else {
       engine_note_off(&e);
     }
-    is_dirty = 1; /* only a debounced note event redraws the screen */
+    is_dirty = 1; /* note state changed: the screen is now stale */
   }
   return is_dirty;
 }
@@ -165,6 +177,7 @@ void platform_init(void) {
   int shown_res;
   int res_now;
   float res;
+  uint8_t ui_dirty = 0;
 
   systick_init();
   DEMCR |= (1U << 24); /* TRCENA: enable the debug cycle counter */
@@ -181,7 +194,7 @@ void platform_init(void) {
   pad_init();
   pa1_adc_init();
   start_conversion();
-  engine_set_mode(&e, MONO);
+  engine_set_mode(&e, LOOP);
   platform_fill_half(0);
   platform_fill_half(1);
   i2s_dma_config(stereo_buf, TOTAL_FRAMES * 2);
@@ -227,11 +240,24 @@ void platform_init(void) {
       res_now = (int)(res * 100.0f + 0.5f);
       now = systick_millis();
 
-      if (poll_pads() || step_now != shown_step ||
-          (res_now != shown_res && (now - last_ui) >= UI_REFRESH_MS)) {
+      if (poll_pads()) {
+        ui_dirty = 1;
+      }
+      if (step_now != shown_step) {
+        ui_dirty = 1;
+      }
+      if (res_now != shown_res) {
+        ui_dirty = 1;
+      }
+
+      /* Redraw at a fixed rate, never inside the pad scan. One changed page is
+       * ~11.5 ms of blocking I2C at 100 kHz, which stalled the scan loop and
+       * stretched the debounce; 50 ms of display lag costs nothing by ear. */
+      if (ui_dirty && (now - last_ui) >= UI_REFRESH_MS) {
         ui.volume = codec_get_volume();
         ui_render(&e, &ui);
         ssd1306_update();
+        ui_dirty = 0;
         shown_step = step_now;
         shown_res = res_now;
         last_ui = now;

@@ -10,7 +10,7 @@
 
 CC_CLI = clang
 
-CFLAGS_COMMON = -std=c99 -Wall -Wextra -Wpedantic  -I Inc
+CFLAGS_COMMON = -std=c99 -Wall -Wextra -Wpedantic  -I Inc -g
 CC_ARM = arm-clang --target=thumbv7em-none-eabihf
 # ---- ARM firmware ----
 CPU_FLAGS = -mcpu=cortex-m4 -mthumb
