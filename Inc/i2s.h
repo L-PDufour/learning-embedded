@@ -6,6 +6,7 @@
 
 extern volatile uint32_t i2s_ht_count;
 extern volatile uint32_t i2s_tc_count;
+extern volatile uint32_t i2s_late_count;
 
 I2cStatus i2s_clock_init(void);
 I2cStatus i2s3_init(void);

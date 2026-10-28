@@ -23,6 +23,12 @@ I2cStatus i2s_clock_init(void) {
   RCC->PLLI2SCFGR = (8U << RCC_PLLI2SCFGR_PLLI2SM_Pos) |
                     (258U << RCC_PLLI2SCFGR_PLLI2SN_Pos) |
                     (3U << RCC_PLLI2SCFGR_PLLI2SR_Pos);
+  /* PLLI2S is fed by whatever RCC->PLLCFGR selects for the main PLL, and that
+   * resets to HSI (16 MHz). Leaving it alone made PLLI2S 172 MHz instead of
+   * 86 MHz, so the I2S ran at ~96 kHz instead of 48 kHz: the refill period
+   * halved to 2.67 ms while a fill costs ~3 ms, so the ISR could never keep up
+   * and every buffer half was torn. Also doubles pitch and tempo. */
+  RCC->PLLCFGR |= RCC_PLLCFGR_PLLSRC_HSE;
   RCC->CR |= RCC_CR_PLLI2SON;
   deadline = systick_millis() + CLOCK_TIMEOUT_MS;
   while (!(RCC->CR & RCC_CR_PLLI2SRDY)) {

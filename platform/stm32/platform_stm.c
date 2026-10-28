@@ -117,7 +117,8 @@ static void blink_forever(int count, uint32_t on_ms, uint32_t off_ms,
  * Cortex-M4, so the DMA ISR reads either the old or the new q, never a torn
  * value. */
 static float read_resonance_pot(void) {
-  static float last = -1.0f;
+  static float last = 0.0f;
+  static uint8_t seeded = 0; /* .bss: the startup zeroes this reliably */
   uint32_t sum = 0;
   float target;
   int i;
@@ -127,15 +128,22 @@ static float read_resonance_pot(void) {
   }
   target = ((float)sum / (float)POT_READS) * (RESONANCE_MAX / ADC_FULL_SCALE);
 
-  if (last < 0.0f) {
+  /* Seed once, and re-seed if the value is ever poisoned. `!(last >= 0.0f)`
+   * catches NaN as well: NaN compares false against everything, so the old
+   * `last < 0.0f` form never re-seeded it, q became NaN and every filter
+   * sample was NaN - the synth went silent with the sequencer still running.
+   * (Measured `last = NaN` on the target.) The flag does not depend on .data
+   * initialisation. */
+  if (!seeded || !(last >= 0.0f)) {
     last = target; /* first read: seed, do not slew up from a bogus value */
+    seeded = 1;
   } else if (target > last + RESONANCE_DEADBAND) {
     last += RESONANCE_SLEW;
   } else if (target < last - RESONANCE_DEADBAND) {
     last -= RESONANCE_SLEW;
   }
 
-  if (last < 0.0f) {
+  if (!(last >= 0.0f)) {
     last = 0.0f;
   }
   if (last > RESONANCE_MAX) {
