@@ -1,6 +1,7 @@
 #include "adc.h"
 #include "codec.h"
 #include "engine.h"
+#include "filter.h"
 #include "gpio.h"
 #include "i2c.h"
 #include "i2s.h"
@@ -47,12 +48,18 @@ static int highest_pad(uint8_t mask) {
   return -1;
 }
 
+static uint8_t poll_inputs(void) {
+  static uint8_t raw_prev = 0;
+  uint8_t raw = input_read();
+  return 0;
+}
+
 static uint8_t poll_pads(void) {
   static uint8_t raw_prev = 0;
   static uint8_t stable = 0;
   static uint8_t count = 0;
   static int active = -1;
-  uint8_t is_dirty = 0;
+
   uint8_t raw = pad_read();
   uint8_t newly;
 
@@ -89,9 +96,9 @@ static uint8_t poll_pads(void) {
     } else {
       engine_note_off(&e);
     }
-    is_dirty = 1; /* note state changed: the screen is now stale */
+    return 1; /* note state changed: the screen is now stale */
   }
-  return is_dirty;
+  return 0;
 }
 
 /* Blink `count` times, then pause, forever. Used to report the codec
@@ -139,8 +146,12 @@ static float read_resonance_pot(void) {
     seeded = 1;
   } else if (target > last + RESONANCE_DEADBAND) {
     last += RESONANCE_SLEW;
+    if (last > target)
+      last = target;
   } else if (target < last - RESONANCE_DEADBAND) {
     last -= RESONANCE_SLEW;
+    if (last < target)
+      last = target;
   }
 
   if (!(last >= 0.0f)) {
@@ -248,7 +259,7 @@ void platform_init(void) {
       res_now = (int)(res * 100.0f + 0.5f);
       now = systick_millis();
 
-      if (poll_pads()) {
+      if (poll_pads() || poll_inputs()) {
         ui_dirty = 1;
       }
       if (step_now != shown_step) {

@@ -33,34 +33,6 @@ static uint32_t fmt_u32(char *out, uint32_t n) {
   return len;
 }
 
-static uint32_t fmt_fixed2(char *out, float n) {
-  int hundredths;
-  int whole;
-  int frac;
-
-  if (n < 0.0f) {
-    n = 0.0f;
-  }
-  if (n > 1.0f) {
-    n = 1.0f;
-  }
-
-  hundredths = (int)(n * 100.0f + 0.5f);
-  if (hundredths > 100) {
-    hundredths = 100;
-  }
-
-  whole = hundredths / 100;
-  frac = hundredths % 100;
-
-  out[0] = (char)('0' + whole);
-  out[1] = '.';
-  out[2] = (char)('0' + frac / 10);
-  out[3] = '\0';
-
-  return 3;
-}
-
 static void note_name(MusicNote note, char *out) {
   const char *s;
   int k;
@@ -190,7 +162,7 @@ void ui_render(Engine *engine, const UiStatus *status) {
   fmt_u32(bpm, engine_get_bpm(engine));
   fmt_u32(vol, status->volume);
   fmt_u32(cutoff, (uint32_t)(hz + 0.5f));
-  fmt_fixed2(resonance, engine_get_resonance(engine));
+  fmt_u32(resonance, (uint32_t)(engine_get_resonance(engine) * 10.0f + 0.5f));
   pattern_row(pattern, engine);
 
   ssd1306_clear(); /* else characters ghost between frames */

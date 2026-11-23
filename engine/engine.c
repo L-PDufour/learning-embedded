@@ -1,4 +1,5 @@
 #include "engine.h"
+#include "filter.h"
 #include "sine_table.h"
 #include "tb.h"
 
@@ -189,14 +190,12 @@ void engine_note_off(Engine *engine) {
   engine->gate = 0.0f;
 }
 
-MusicNote engine_get_note(Engine *engine) {
-  TB_ASSERT(engine != 0);
-  if (engine->current_mode == LOOP) {
-    return engine->steps[engine->current_step].note;
-  } else if (engine->current_mode == MONO) {
-    return engine->mono_note;
-  }
-  return NOTE_REST;
+if (engine->current_mode == LOOP) {
+  return engine->steps[engine->current_step].note;
+} else if (engine->current_mode == MONO) {
+  return engine->mono_note;
+}
+return NOTE_REST;
 }
 
 void engine_set_mode(Engine *engine, Mode new_mode) {
@@ -236,6 +235,12 @@ void engine_fill_buffer(Engine *engine, sample_t *buf, uint32_t n) {
 void engine_set_resonance(Engine *engine, float resonance) {
   TB_ASSERT(engine != 0);
   filter_set_resonance(&engine->filter, resonance);
+}
+
+void engine_set_filter_type(Engine *engine, FilterType filter) {
+  TB_ASSERT(engine != 0);
+  TB_ASSERT(filter < FILTER_COUNT);
+  filter_set_filter_type(&engine->filter, filter);
 }
 
 Mode engine_get_mode(const Engine *engine) {

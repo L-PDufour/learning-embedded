@@ -11,6 +11,7 @@ typedef enum {
   FILTER_BAND_PASS,
   FILTER_LOW_PASS,
   FILTER_HIGH_PASS,
+  FILTER_COUNT
 } FilterType;
 
 typedef struct filter {
@@ -26,6 +27,7 @@ typedef struct filter {
 Filter filter_init(void);
 void filter_set_cutoff(Filter *filter, float hz);
 void filter_set_resonance(Filter *filter, float resonance);
+void filter_set_filter_type(Filter *filter, FilterType new_filter);
 int16_t filter_process(Filter *filter, int16_t sample);
 
 #endif

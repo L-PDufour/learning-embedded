@@ -14,6 +14,11 @@ static const PadPin pad_map[PADS_MAX] = {
     {GPIOB, 13}, {GPIOB, 14}, {GPIOB, 15}, {GPIOC, 0},
 };
 
+static const PadPin util_map[2] = {
+    {GPIOC, 4},
+    {GPIOC, 5},
+};
+
 void pad_init(void) {
   size_t i;
 
@@ -28,6 +33,15 @@ void pad_init(void) {
     port->PUPDR &= ~(3U << (2 * p)); /* clear both bits   */
     port->PUPDR |= (1U << (2 * p));  /* 01 = pull-up      */
   }
+
+  for (i = 0; i < 2; i++) {
+    uint32_t p = util_map[i].pin;
+    GPIO_TypeDef *port = util_map[i].port;
+
+    port->MODER &= ~(3U << (2 * p)); /* 00 = input        */
+    port->PUPDR &= ~(3U << (2 * p)); /* clear both bits   */
+    port->PUPDR |= (1U << (2 * p));  /* 01 = pull-up      */
+  }
 }
 
 uint8_t pad_read(void) {
@@ -37,6 +51,21 @@ uint8_t pad_read(void) {
   for (i = 0; i < PADS_MAX; i++) {
     GPIO_TypeDef *port = pad_map[i].port;
     uint32_t p = pad_map[i].pin;
+
+    if (((port->IDR >> p) & 1U) == 0U) { /* active-low: 0 = pressed */
+      mask |= (uint8_t)(1U << i);
+    }
+  }
+  return mask;
+}
+
+uint8_t buttons_read(void) {
+  uint8_t mask = 0;
+  size_t i;
+
+  for (i = 0; i < 2; i++) {
+    GPIO_TypeDef *port = util_map[i].port;
+    uint32_t p = util_map[i].pin;
 
     if (((port->IDR >> p) & 1U) == 0U) { /* active-low: 0 = pressed */
       mask |= (uint8_t)(1U << i);

@@ -39,6 +39,10 @@ void filter_set_cutoff(Filter *filter, float cutoff) {
     filter->f = 1.0f;
 }
 
+void filter_set_filter_type(Filter *filter, FilterType new_filter) {
+  filter->type = new_filter;
+}
+
 int16_t filter_process(Filter *filter, int16_t sample) {
   float x;
   float f;

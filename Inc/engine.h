@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 typedef int16_t sample_t;
-#define SAMPLE_MAX 32767
+#define SAMPLE_MAX 32767.0f
 #define ENGINE_STEPS_MAX 8
 
 typedef enum {
@@ -163,7 +163,7 @@ typedef struct engine {
 } Engine;
 
 #define SAMPLE_RATE 48000
-#define AMPLITUDE (SAMPLE_MAX / 2)
+#define AMPLITUDE (SAMPLE_MAX / 2.0f)
 Engine engine_init(void);
 sample_t engine_next_sample(Engine *engine);
 void engine_set_bpm(Engine *engine, uint32_t bpm);
