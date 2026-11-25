@@ -172,6 +172,7 @@ void engine_set_steps(Engine *engine, uint32_t max_steps,
 MusicNote engine_get_step(const Engine *engine, uint32_t step);
 void engine_fill_buffer(Engine *engine, sample_t *buf, uint32_t n);
 void engine_set_wave(Engine *engine, WaveType wave);
+void engine_set_filter_type(Engine *engine, FilterType filter);
 void engine_set_cutoff(Engine *engine, float hz);
 void engine_set_mode(Engine *engine, Mode new_mode);
 void engine_note_on(Engine *engine, MusicNote note);

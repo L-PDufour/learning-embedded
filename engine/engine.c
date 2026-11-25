@@ -190,14 +190,6 @@ void engine_note_off(Engine *engine) {
   engine->gate = 0.0f;
 }
 
-if (engine->current_mode == LOOP) {
-  return engine->steps[engine->current_step].note;
-} else if (engine->current_mode == MONO) {
-  return engine->mono_note;
-}
-return NOTE_REST;
-}
-
 void engine_set_mode(Engine *engine, Mode new_mode) {
   TB_ASSERT(engine != 0);
   TB_ASSERT(new_mode < MODE_COUNT);

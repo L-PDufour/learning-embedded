@@ -7,7 +7,7 @@
 
 void pad_init(void);
 uint8_t pad_read(void);
-uint8_t input_read(void);
+uint8_t buttons_read(void);
 
 void led_init(void);
 void board_init(void);

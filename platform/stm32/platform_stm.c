@@ -48,57 +48,75 @@ static int highest_pad(uint8_t mask) {
   return -1;
 }
 
-static uint8_t poll_inputs(void) {
-  static uint8_t raw_prev = 0;
-  uint8_t raw = input_read();
+/* One debouncer per input source: the state must survive between polls, so
+ * it lives in a struct rather than in locals (locals reset every call: the
+ * mask never settles and every poll looks like a fresh press). Returns the
+ * bits that just went down; read d->stable for what is held now. */
+typedef struct {
+  uint8_t raw_prev;
+  uint8_t stable;
+  uint8_t count;
+} Debounce;
+
+static uint8_t debounce(Debounce *d, uint8_t raw) {
+  if (raw != d->raw_prev) {
+    d->raw_prev = raw;
+    d->count = 0;
+  } else if (d->count < DEBOUNCE) {
+    d->count++;
+  }
+
+  if (d->count >= DEBOUNCE && raw != d->stable) {
+    uint8_t pressed = (uint8_t)(raw & ~d->stable);
+    d->stable = raw;
+    return pressed;
+  }
   return 0;
 }
 
+static uint8_t poll_buttons(void) {
+  static Debounce d;
+
+  uint8_t edge = debounce(&d, buttons_read());
+  uint8_t changed = 0;
+
+  if (edge & (1U << 0)) {
+    engine_set_wave(&e, (WaveType)((engine_get_wave(&e) + 1) % WAVE_COUNT));
+    changed = 1;
+  }
+
+  if (edge & (1U << 1)) {
+    /* README order: LP -> HP -> Bypass. The enum is NONE, BAND_PASS, LP, HP,
+     * so a modulo walk would visit BAND_PASS too. */
+    FilterType type = engine_get_filter(&e);
+    type = (type == FILTER_LOW_PASS)    ? FILTER_HIGH_PASS
+           : (type == FILTER_HIGH_PASS) ? FILTER_NONE
+                                        : FILTER_LOW_PASS;
+    //    engine_set_filter_type(&e, type);
+    changed = 1;
+  }
+
+  return changed;
+}
+
 static uint8_t poll_pads(void) {
-  static uint8_t raw_prev = 0;
-  static uint8_t stable = 0;
-  static uint8_t count = 0;
+  static Debounce d;
   static int active = -1;
 
-  uint8_t raw = pad_read();
-  uint8_t newly;
+  uint8_t edge = debounce(&d, pad_read());
+  int next = highest_pad(edge != 0 ? edge : d.stable);
 
-  if (raw != raw_prev) {
-    raw_prev = raw;
-    count = 0;
-  } else if (count < DEBOUNCE) {
-    count++;
+  if (next == active) {
+    return 0; /* nothing changed: no note call, no redraw */
   }
 
-  /* A press is acted on at once. Waiting DEBOUNCE polls for it made the
-   * required hold time proportional to the loop period, so a blocked loop
-   * swallowed short taps. A bounce cannot re-fire the note: `stable` already
-   * holds the bit, so only a genuinely new bit reaches this path again. */
-  newly = (uint8_t)(raw & ~stable);
-  if (newly != 0) {
-    stable = raw;
-    active = highest_pad(newly); /* a key went down: it wins (last-pressed) */
+  active = next;
+  if (active >= 0) {
     engine_note_on(&e, keys[active]);
-    return 1;
+  } else {
+    engine_note_off(&e);
   }
-
-  /* Release, and falling back to a pad still held, stay debounced: a late
-   * note-off is inaudible, a late note-on is not. */
-  if (count >= DEBOUNCE && raw != stable) {
-    stable = raw;
-
-    if (active >= 0 && (stable & (1U << active)) == 0) {
-      active = highest_pad(stable); /* active released: fall back to any held */
-    }
-
-    if (active >= 0) {
-      engine_note_on(&e, keys[active]);
-    } else {
-      engine_note_off(&e);
-    }
-    return 1; /* note state changed: the screen is now stale */
-  }
-  return 0;
+  return 1; /* note state changed: the screen is now stale */
 }
 
 /* Blink `count` times, then pause, forever. Used to report the codec
@@ -259,7 +277,7 @@ void platform_init(void) {
       res_now = (int)(res * 100.0f + 0.5f);
       now = systick_millis();
 
-      if (poll_pads() || poll_inputs()) {
+      if (poll_pads() || poll_buttons()) {
         ui_dirty = 1;
       }
       if (step_now != shown_step) {
