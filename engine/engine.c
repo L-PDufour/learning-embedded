@@ -7,7 +7,6 @@
 #include <stdint.h>
 
 #define MAX_RAMP 256
-#define MODE_COUNT 4
 
 #define DEFAULT_BPM 120U
 #define BPM_MIN 40U
@@ -157,12 +156,11 @@ static sample_t render_sample(Engine *engine) {
     note = engine->steps[engine->current_step].note;
     gate = engine->steps[engine->current_step].enabled ? 1.0f : 0.0f;
     break;
-  case MONO:
+  case PLAY:
     note = engine->mono_note;
     gate = engine->gate;
     break;
-  case STOP:
-    gate = 0;
+  case MODE_COUNT:
     break;
   }
 

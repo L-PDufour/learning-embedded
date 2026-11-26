@@ -86,13 +86,11 @@ static uint8_t poll_buttons(void) {
   }
 
   if (edge & (1U << 1)) {
-    /* README order: LP -> HP -> Bypass. The enum is NONE, BAND_PASS, LP, HP,
-     * so a modulo walk would visit BAND_PASS too. */
     FilterType type = engine_get_filter(&e);
     type = (type == FILTER_LOW_PASS)    ? FILTER_HIGH_PASS
            : (type == FILTER_HIGH_PASS) ? FILTER_NONE
                                         : FILTER_LOW_PASS;
-    //    engine_set_filter_type(&e, type);
+    engine_set_filter_type(&e, type);
     changed = 1;
   }
 

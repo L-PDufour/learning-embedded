@@ -135,12 +135,7 @@ typedef enum {
   WAVE_COUNT
 } WaveType;
 
-typedef enum {
-  STOP,
-  LOOP,
-  EDITING,
-  MONO,
-} Mode;
+typedef enum { PLAY, LOOP, EDITING, MODE_COUNT } Mode;
 
 typedef struct engine {
   uint32_t num_steps;

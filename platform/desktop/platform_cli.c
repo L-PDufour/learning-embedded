@@ -23,7 +23,7 @@ void platform_init(void) {
 
   e = engine_init();
   engine_set_wave(&e, WAVE_SINE);
-  engine_set_mode(&e, MONO);
+  engine_set_mode(&e, PLAY);
   engine_set_resonance(&e, 0.8f);
 
   while (1) {

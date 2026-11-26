@@ -130,12 +130,10 @@ static const char *ui_filter_name(FilterType filter) {
 static const char *ui_mode_name(Mode mode) {
   switch (mode) {
   case LOOP:
-    return "PLAY";
-  case STOP:
-    return "STOP";
+    return "LOOP";
   case EDITING:
     return "EDIT";
-  case MONO:
+  case PLAY:
     return "MONO";
   default:
     TB_UNREACHABLE();
