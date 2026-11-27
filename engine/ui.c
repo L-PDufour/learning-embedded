@@ -134,7 +134,7 @@ static const char *ui_mode_name(Mode mode) {
   case EDITING:
     return "EDIT";
   case PLAY:
-    return "MONO";
+    return "PLAY";
   default:
     TB_UNREACHABLE();
     return "?";

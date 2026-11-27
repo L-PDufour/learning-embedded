@@ -94,6 +94,16 @@ static uint8_t poll_buttons(void) {
     changed = 1;
   }
 
+  if (edge & (1U << 2) && engine_get_mode(&e) != EDITING) {
+    engine_set_mode(&e, (Mode)((engine_get_mode(&e) == PLAY ? LOOP : PLAY)));
+    changed = 1;
+  }
+
+  if (edge & (1U << 3) && engine_get_mode(&e) != PLAY) {
+    engine_set_mode(&e, (Mode)((engine_get_mode(&e) == LOOP ? EDITING : LOOP)));
+    changed = 1;
+  }
+
   return changed;
 }
 
@@ -229,7 +239,7 @@ void platform_init(void) {
   pad_init();
   pa1_adc_init();
   start_conversion();
-  engine_set_mode(&e, LOOP);
+  engine_set_mode(&e, PLAY);
   platform_fill_half(0);
   platform_fill_half(1);
   i2s_dma_config(stereo_buf, TOTAL_FRAMES * 2);

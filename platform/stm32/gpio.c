@@ -1,4 +1,5 @@
 #include "gpio.h"
+#include "engine.h"
 #include "stm32f4xx.h"
 #include "systick.h"
 #include <stddef.h>
@@ -14,9 +15,11 @@ static const PadPin pad_map[PADS_MAX] = {
     {GPIOB, 13}, {GPIOB, 14}, {GPIOB, 15}, {GPIOC, 0},
 };
 
-static const PadPin util_map[2] = {
+static const PadPin util_map[4] = {
     {GPIOC, 4},
     {GPIOC, 5},
+    {GPIOB, 0},
+    {GPIOB, 1},
 };
 
 void pad_init(void) {
@@ -34,7 +37,7 @@ void pad_init(void) {
     port->PUPDR |= (1U << (2 * p));  /* 01 = pull-up      */
   }
 
-  for (i = 0; i < 2; i++) {
+  for (i = 0; i < BUTTONS_MAX; i++) {
     uint32_t p = util_map[i].pin;
     GPIO_TypeDef *port = util_map[i].port;
 
@@ -63,7 +66,7 @@ uint8_t buttons_read(void) {
   uint8_t mask = 0;
   size_t i;
 
-  for (i = 0; i < 2; i++) {
+  for (i = 0; i < BUTTONS_MAX; i++) {
     GPIO_TypeDef *port = util_map[i].port;
     uint32_t p = util_map[i].pin;
 

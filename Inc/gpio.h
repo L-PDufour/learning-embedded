@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #define PADS_MAX 8
+#define BUTTONS_MAX 4
 
 void pad_init(void);
 uint8_t pad_read(void);
